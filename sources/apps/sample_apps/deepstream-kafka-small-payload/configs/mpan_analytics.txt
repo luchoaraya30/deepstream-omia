@@ -1,0 +1,81 @@
+[property]
+enable=1
+#Width height used for configuration to which below configs are configured
+config-width=704
+config-height=480
+#osd-mode 0: Dont display any lines, rois and text
+#         1: Display only lines, rois and static text i.e. labels
+#         2: Display all info from 1 plus information about counts
+osd-mode=2
+#Set OSD font size that has to be displayed
+display-font-size=12
+
+[overcrowding-stream-0]
+enable=1
+roi-OC=0;0;704;0;704;480;0;480
+#no of objects that will trigger OC
+object-threshold=3
+class-id=-1
+
+[overcrowding-stream-1]
+enable=1
+roi-OC=0;0;704;0;704;480;0;480
+#no of objects that will trigger OC
+object-threshold=3
+class-id=-1
+
+[overcrowding-stream-2]
+enable=1
+roi-OC=0;0;704;0;704;480;0;480
+#no of objects that will trigger OC
+object-threshold=3
+class-id=-1
+
+[overcrowding-stream-3]
+enable=1
+roi-OC=0;0;704;0;704;480;0;480
+#no of objects that will trigger OC
+object-threshold=3
+class-id=-1
+
+[overcrowding-stream-4]
+enable=1
+roi-OC=0;0;704;0;704;480;0;480
+#no of objects that will trigger OC
+object-threshold=3
+class-id=-1
+
+[overcrowding-stream-5]
+enable=1
+roi-OC=0;0;704;0;704;480;0;480
+#no of objects that will trigger OC
+object-threshold=3
+class-id=-1
+
+[overcrowding-stream-6]
+enable=1
+roi-OC=0;0;704;0;704;480;0;480
+#no of objects that will trigger OC
+object-threshold=3
+class-id=-1
+
+[overcrowding-stream-7]
+enable=1
+roi-OC=0;0;704;0;704;480;0;480
+#no of objects that will trigger OC
+object-threshold=3
+class-id=-1
+
+[overcrowding-stream-8]
+enable=1
+roi-OC=0;0;704;0;704;480;0;480
+#no of objects that will trigger OC
+object-threshold=3
+class-id=-1
+
+[overcrowding-stream-9]
+enable=1
+roi-OC=0;0;704;0;704;480;0;480
+#no of objects that will trigger OC
+object-threshold=3
+class-id=-1
