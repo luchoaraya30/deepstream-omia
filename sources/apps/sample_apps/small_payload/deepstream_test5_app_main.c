@@ -170,17 +170,17 @@ static AppConfigAnalyticsModel model_used = APP_CONFIG_ANALYTICS_MODELS_UNKNOWN;
 static struct timeval ota_request_time;
 static struct timeval ota_completion_time;
 
-int getMinute();
-int getPeriodo();
-void getLCCount(NvDsFrameMeta *frame_meta, NvDsEventMsgMeta *lc_data);
+int getMinute ();
+int getPeriodo ();
+bool checkAnalytic (int source, int tipo);
+void getLCCount (NvDsFrameMeta *frame_meta, NvDsEventMsgMeta *lc_data, int tipo);
+void updateFrameCount (NvDsFrameMeta *frame_meta);
+void getAvgFrameCount (NvDsEventMsgMeta *roi_data, int source, int tipo);
 
-int *count_lcs;
-int *count_person_rois;
-int *count_car_rois;
 int count_frame_init[100] = {0};
 int count_frame_fin[100] = {0};
-
 bool flag_query[100] = {0};
+bool flag_lc_p, flag_lc_c, flag_roi_p, flag_roi_c;
 
 typedef struct _OTAInfo
 {
@@ -505,6 +505,7 @@ generate_event_msg_meta (gpointer data, gint class_id, gboolean useTs,
     float scaleW, float scaleH,
     NvDsFrameMeta * frame_meta)
 {
+  //printf("%s \n", frame_params->line_id);
   NvDsEventMsgMeta *meta = (NvDsEventMsgMeta *) data;
   GstClockTime ts_generated = 0;
 
@@ -519,8 +520,33 @@ generate_event_msg_meta (gpointer data, gint class_id, gboolean useTs,
   } else {
     generate_ts_rfc3339 (meta->ts, MAX_TIME_STAMP_LEN);
   }
+  //printf("yiropa ctm weno pal pico \n");
+  //printf("%d \n", flag_roi_p);
+  
+  // 0->persona    1->autos
+  if (flag_lc_p)
+    getLCCount (frame_meta, meta, 0);
+  if (flag_lc_c)
+    getLCCount (frame_meta, meta, 1);
+  if (flag_roi_p) 
+    getAvgFrameCount (meta, frame_meta->source_id, 0);
+  if (flag_roi_c)
+    getAvgFrameCount (meta, frame_meta->source_id, 1);
+  
+  
+  //printf("%d \n", meta->componentId);
+  
+  /*
+  meta->fframe_init = frame_params->frame_init;
+  meta->fframe_fin = frame_params->frame_fin;
+  meta->ffreq = frame_params->freq;
+  meta->fanalytic = frame_params->analytic;
+  meta->fobj_type = frame_params->obj_type;
+  meta->fline_id = frame_params->line_id;
+  meta->fcount = frame_params->count;
+  */
 
-  getLCCount(frame_meta, meta);
+  //g_print(meta->fline_id);
 
   (void) ts_generated;
 
@@ -544,19 +570,20 @@ bbox_generated_probe_after_analytics (AppCtx * appCtx, GstBuffer * buf,
   float scaleW = 0;
   float scaleH = 0;
 
-  ///////////
-  int now = getMinute();
-  int periodo = getPeriodo();
-  //////////
+  int now = getMinute ();
+  int periodo = getPeriodo ();
   
   for (NvDsMetaList * l_frame = batch_meta->frame_meta_list; l_frame != NULL;
       l_frame = l_frame->next) {
     NvDsFrameMeta *frame_meta = l_frame->data;
+    
     stream_id = frame_meta->source_id;
-
-    ///////
+    flag_lc_p = checkAnalytic (stream_id, 0);
+    flag_lc_c = checkAnalytic (stream_id, 1);
+    flag_roi_p = checkAnalytic (stream_id, 2);
+    flag_roi_c = checkAnalytic (stream_id, 3);
+    
     count_frame_fin[stream_id]++;
-    //////
     
     GstClockTime buf_ntp_time = 0;
     if (playback_utc == FALSE) {
@@ -573,15 +600,18 @@ bbox_generated_probe_after_analytics (AppCtx * appCtx, GstBuffer * buf,
       }
       src_stream->last_ntp_time = buf_ntp_time;
     }
-
-    GList *l;
+    
+    if (flag_roi_p || flag_roi_c) 
+      updateFrameCount (frame_meta);
 
     if (now % periodo == 0 && flag_query[stream_id] == 0) {
       flag_query[stream_id] = 1;
       NvDsEventMsgMeta *msg_meta = (NvDsEventMsgMeta *) g_malloc0 (sizeof (NvDsEventMsgMeta));
-
+      
       msg_meta->fframe_init = count_frame_init[stream_id];
       msg_meta->fframe_fin =  count_frame_fin[stream_id];
+      msg_meta->aframe_init = count_frame_init[stream_id];
+      msg_meta->aframe_fin =  count_frame_fin[stream_id];
 
       count_frame_init[stream_id] = count_frame_fin[stream_id];
 
@@ -616,7 +646,6 @@ bbox_generated_probe_after_analytics (AppCtx * appCtx, GstBuffer * buf,
     else if (now % periodo != 0 && flag_query[stream_id] == 1) {
       flag_query[stream_id] = 0;
     }
-
     testAppCtx->streams[stream_id].frameCount++;
   }
 }

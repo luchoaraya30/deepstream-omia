@@ -305,23 +305,31 @@ typedef struct NvDsEventMsgMeta {
   gint fframe_init;
   gint fframe_fin;
   gint ffreq;
-  gint fline_id[100];
-  gint fcount[100];
+  gint fperson_line_id[100];
+  gint fcar_line_id[100];
+  gint fperson_count[100];
+  gint fcar_count[100];
   gint fanalytic;
   gint fobj_type;
-  gint fsize_array;
+  gint fperson_array;
+  gint fcar_array;
   // Aforo Meta
   gint acamera_id;
   gint aframe_init;
   gint aframe_fin;
   gint afreq;
-  gint aroi_id[100];
-  gint aavg[100];
-  gint amin_count[100];
-  gint amax_count[100];
+  gint aperson_roi_id[100];
+  gint acar_roi_id[100];
+  gint aavg_person_count[100];
+  gint aavg_car_count[100];
+  gint aperson_max_count[100];
+  gint acar_max_count[100];
+  gint aperson_min_count[100];
+  gint acar_min_count[100];
   gint aanalytic;
   gint aobj_type;
-  gint asize_array;
+  gint aperson_array;
+  gint acar_array;
   //-----------------------------------------------------------------------------------------//
   //
 } NvDsEventMsgMeta;

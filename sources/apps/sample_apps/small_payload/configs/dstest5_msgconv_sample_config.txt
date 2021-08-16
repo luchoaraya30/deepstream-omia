@@ -2,6 +2,11 @@
 enable=1
 id=100
 
+[analytics1]
+enable=1
+id=300
+
+
 [analytics2]
 enable=0
 id=300

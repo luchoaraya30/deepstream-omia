@@ -108,13 +108,15 @@ time_t getTimestamp() {
     return today_time;
 }
 
-string getString (int *numeros, int size)
+string getString (int *numeros, int size, int shift)
 {
   string formaFinal;
 
   for (int i=0; i<size; i++ )
-    formaFinal +=  to_string(numeros[i]) + "|";
-
+    if (shift)
+      formaFinal +=  to_string(numeros[i] + shift) + "|";
+    else
+      formaFinal +=  to_string(numeros[i]) + "|";
   return formaFinal;
 }
 
@@ -303,7 +305,69 @@ generate_sensor_object (NvDsMsg2pCtx *ctx, NvDsEventMsgMeta *meta)
 }
 
 static JsonObject*
-generate_analytics_module_object (NvDsMsg2pCtx *ctx, NvDsEventMsgMeta *meta)
+generate_analytics_module_object (NvDsMsg2pCtx *ctx, NvDsEventMsgMeta *meta, int tipo)
+{
+  NvDsPayloadPriv *privObj = NULL;
+  NvDsAnalyticsObject *dsObj = NULL;
+  JsonObject *analyticsObj;
+  JsonObject *jobject;
+
+  privObj = (NvDsPayloadPriv *) ctx->privData;
+
+  auto idMap = privObj->analyticsObj.find (meta->moduleId);
+
+  if (idMap != privObj->analyticsObj.end()) {
+    dsObj = &idMap->second;
+  } else {
+    cout << "No entry for " CONFIG_GROUP_ANALYTICS << meta->moduleId
+        << " in configuration file" << endl;
+    return NULL;
+  }
+
+  /* analytics object
+   * "analyticsModule": {
+       "id": "string",
+       "description": "Vehicle Detection and License Plate Recognition",
+       "confidence": 97.79,
+       "source": "OpenALR",
+       "version": "string"
+     }
+   */
+  
+  string ids, counts;
+  // analytics object
+  analyticsObj = json_object_new ();
+  // este id viene desde el archivo de configuracion del payload
+  //json_object_set_string_member (analyticsObj, "camera_id", dsObj->id.c_str());
+  json_object_set_int_member (analyticsObj, "camera_id", meta->fcamera_id);
+  
+  // generate payload
+  if (tipo == 0) {
+    ids = getString(meta->fperson_line_id, meta->fperson_array, 0);
+    counts = getString(meta->fperson_count, meta->fperson_array, 0);
+    meta->fobj_type = 0;
+  }
+  else if (tipo == 1) {
+    ids = getString(meta->fcar_line_id, meta->fcar_array, 0);
+    counts = getString(meta->fcar_count, meta->fcar_array, 0);
+    if (meta->fperson_array)
+      ids = getString(meta->fcar_line_id, meta->fcar_array, meta->fperson_array);
+    meta->fobj_type = 1;
+  }
+
+  json_object_set_int_member (analyticsObj, "frame_init", meta->fframe_init);
+  json_object_set_int_member (analyticsObj, "frame_fin", meta->fframe_fin);
+  json_object_set_int_member (analyticsObj, "period", meta->ffreq);
+  json_object_set_int_member (analyticsObj, "analytic", meta->fanalytic);
+  json_object_set_int_member (analyticsObj, "obj_type", meta->fobj_type);
+  json_object_set_string_member (analyticsObj, "line_id", ids.data());
+  json_object_set_string_member (analyticsObj, "count", counts.data());
+
+  return analyticsObj;
+}
+
+static JsonObject*
+generate_roi_module_object (NvDsMsg2pCtx *ctx, NvDsEventMsgMeta *meta, int tipo)
 {
   NvDsPayloadPriv *privObj = NULL;
   NvDsAnalyticsObject *dsObj = NULL;
@@ -332,22 +396,40 @@ generate_analytics_module_object (NvDsMsg2pCtx *ctx, NvDsEventMsgMeta *meta)
      }
    */
 
+  string ids, counts, maxs, mins;
   // analytics object
   analyticsObj = json_object_new ();
   // este id viene desde el archivo de configuracion del payload
-  json_object_set_string_member (analyticsObj, "camera_id", dsObj->id.c_str());
-  
-  // generate payload
-  string ids = getString(meta->fline_id, meta->fsize_array);
-  string counts = getString(meta->fcount, meta->fsize_array);
+  //json_object_set_string_member (analyticsObj, "camera_id", dsObj->id.c_str());
+  json_object_set_int_member (analyticsObj, "camera_id", meta->fcamera_id);
 
-  json_object_set_int_member (analyticsObj, "frame_init", meta->fframe_init);
-  json_object_set_int_member (analyticsObj, "frame_fin", meta->fframe_fin);
-  json_object_set_int_member (analyticsObj, "period", meta->ffreq);
-  json_object_set_int_member (analyticsObj, "analytic", meta->fanalytic);
-  json_object_set_int_member (analyticsObj, "obj_type", meta->fobj_type);
-  json_object_set_string_member (analyticsObj, "line_id", ids.data());
+  // generate payload
+  if (tipo == 0) {
+    ids = getString(meta->aperson_roi_id, meta->aperson_array, 0);
+    counts = getString(meta->aavg_person_count, meta->aperson_array, 0);
+    maxs = getString(meta->aperson_max_count, meta->aperson_array, 0);
+    mins = getString(meta->aperson_min_count, meta->aperson_array, 0);
+    meta->aobj_type = 0;
+  }
+  else if (tipo == 1) {
+    ids = getString(meta->acar_roi_id, meta->acar_array, 0);
+    counts = getString(meta->aavg_car_count, meta->acar_array, 0);
+    maxs = getString(meta->acar_max_count, meta->acar_array, 0);
+    mins = getString(meta->acar_min_count, meta->acar_array, 0);
+    if (meta->aperson_array)
+      ids = getString(meta->acar_roi_id, meta->acar_array, meta->aperson_array);
+    meta->aobj_type = 1;
+  }
+
+  json_object_set_int_member (analyticsObj, "frame_init", meta->aframe_init);
+  json_object_set_int_member (analyticsObj, "frame_fin", meta->aframe_fin);
+  json_object_set_int_member (analyticsObj, "period", meta->afreq);
+  json_object_set_int_member (analyticsObj, "analytic", meta->aanalytic);
+  json_object_set_int_member (analyticsObj, "obj_type", meta->aobj_type);
+  json_object_set_string_member (analyticsObj, "roi_id", ids.data());
   json_object_set_string_member (analyticsObj, "count", counts.data());
+  json_object_set_string_member (analyticsObj, "max", maxs.data());
+  json_object_set_string_member (analyticsObj, "min", mins.data());
 
   return analyticsObj;
 }
@@ -671,9 +753,13 @@ generate_schema_message (NvDsMsg2pCtx *ctx, NvDsEventMsgMeta *meta)
   JsonObject *rootObj;
   //JsonObject *placeObj;
   //JsonObject *sensorObj;
-  JsonObject *analyticsObj;
+  //JsonObject *analyticsObj;
   //JsonObject *eventObj;
   //JsonObject *objectObj;
+  JsonObject *lc_person_obj;
+  JsonObject *lc_car_obj;
+  JsonObject *roi_person_obj;
+  JsonObject *roi_car_obj;
   gchar *message;
 
   uuid_t msgId;
@@ -690,8 +776,13 @@ generate_schema_message (NvDsMsg2pCtx *ctx, NvDsEventMsgMeta *meta)
 
   // analytics object
   //cout << meta->fline_id << endl;
-  //
-  analyticsObj = generate_analytics_module_object (ctx, meta);
+  
+//  if (meta->fperson_array)
+//    lc_car_obj = generate_analytics_module_object (ctx, meta, 0);
+  
+//  if (meta->fcar_array)
+//    lc_car_obj = generate_analytics_module_object (ctx, meta, 1);
+
 
   // object object
   //objectObj = generate_object_object (ctx, meta);
@@ -708,8 +799,28 @@ generate_schema_message (NvDsMsg2pCtx *ctx, NvDsEventMsgMeta *meta)
   //json_object_set_object_member (rootObj, "place", placeObj);
   //json_object_set_object_member (rootObj, "sensor", sensorObj);
 
-  // aca se modifico el nombre del campo, "analyticsModule"->"detection"
-  json_object_set_object_member (rootObj, "detections", analyticsObj);
+  if (meta->fperson_array) {
+    //meta->componentId = 1;
+    lc_person_obj = generate_analytics_module_object (ctx, meta, 0);
+    json_object_set_object_member (rootObj, "lc_person", lc_person_obj);
+  }
+  if (meta->fcar_array) {
+    //meta->componentId = 1;
+    lc_car_obj = generate_analytics_module_object (ctx, meta, 1);
+    json_object_set_object_member (rootObj, "lc_car", lc_car_obj);
+  }
+
+  if (meta->aperson_array) {
+    //meta->componentId = 2;
+    roi_person_obj = generate_roi_module_object (ctx, meta, 0);
+    json_object_set_object_member (rootObj, "roi_person", roi_person_obj);
+  }
+  if (meta->acar_array) {
+    //meta->componentId = 2;
+    roi_car_obj = generate_roi_module_object (ctx, meta, 1);
+    json_object_set_object_member (rootObj, "roi_car", roi_car_obj);
+  }
+
   //json_object_set_object_member (rootObj, "object", objectObj);
   //json_object_set_object_member (rootObj, "event", eventObj);
   
@@ -1507,7 +1618,6 @@ nvds_msg2p_generate_multiple (NvDsMsg2pCtx *ctx, NvDsEvent *events, guint eventS
   *payloadCount = 0;
   //Set how many payloads are being sent back to the plugin
   payloads = (NvDsPayload **) g_malloc0 (sizeof (NvDsPayload*) * 1);
-
   if (ctx->payloadType == NVDS_PAYLOAD_DEEPSTREAM) {
     message = generate_schema_message (ctx, events->metadata);
     if (message) {
@@ -1546,12 +1656,12 @@ nvds_msg2p_generate (NvDsMsg2pCtx *ctx, NvDsEvent *events, guint size)
 {
   gchar *message = NULL;
   gint len = 0;
+  
   NvDsPayload *payload = (NvDsPayload *) g_malloc0 (sizeof (NvDsPayload));
 
   //cout << "generate " << events->metadata->fline_id << endl;
   //cout << "generate *&  " << &*&events->metadata->fline_id << endl;
   //cout << "generate &*  " << *&*events->metadata->fline_id << endl;
-
   if (ctx->payloadType == NVDS_PAYLOAD_DEEPSTREAM) {
     message = generate_schema_message (ctx, events->metadata);
     if (message) {

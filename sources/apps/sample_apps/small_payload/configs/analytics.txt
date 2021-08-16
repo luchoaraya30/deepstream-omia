@@ -39,3 +39,12 @@ extended=0
 #balanced: Strict direction adherence expected compared to mode=loose
 #strict  : Strict direction adherence expected compared to mode=balanced
 mode=loose
+
+[roi-filtering-stream-0]
+#enable or disable following feature
+enable=1
+#ROI to filter select objects, and remove from meta data
+roi-roi1=0;229;957;254;965;821;0;816
+#remove objects in the ROI
+inverse-roi=0
+class-id=-1

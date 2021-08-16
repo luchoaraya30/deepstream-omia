@@ -29,12 +29,27 @@ using namespace libconfig;
 int periodo = -1;
 int person_id = -1;
 int car_id = -1;
+
 bool config_parsed = false;
+bool min_count_person_flag = true;
+bool min_count_car_flag = true;
+
 vector<int> ids;
-map<int, vector<string>> lcs;
-map<int, vector<string>> rois;
-map<int, vector<int>> lcs_count;
-map<int, vector<int>> rois_count;
+
+map<int, vector<string>> name_lc_person;
+map<int, vector<string>> name_lc_car;
+map<int, vector<string>> name_roi_person;
+map<int, vector<string>> name_roi_car;
+
+map<int, vector<int>> count_lc_person;
+map<int, vector<int>> count_lc_car;
+map<int, vector<int>> count_roi_person;
+map<int, vector<int>> count_roi_car;
+
+map<int, vector<int>> max_count_roi_person;
+map<int, vector<int>> max_count_roi_car;
+map<int, vector<int>> min_count_roi_person;
+map<int, vector<int>> min_count_roi_car;
 
 vector<string> split (const string &s, char delim) 
 {
@@ -75,8 +90,8 @@ int parseConfigFile ()
   try
   {
     string periodoMuestreo = cfg.lookup("periodoMuestreo");
-    //string personaClaseID = cfg.lookup("personaClaseID");
-    //string autoClaseID = cfg.lookup("autoClaseID");
+    string personaClaseID = cfg.lookup("personaClaseID");
+    string autoClaseID = cfg.lookup("autoClaseID");
     string camarasActivas = cfg.lookup("camarasActivas");
 
     //cout << "Periodo: " << periodoMuestreo << endl <<"Camaras " << camarasActivas << endl;
@@ -84,8 +99,8 @@ int parseConfigFile ()
     
     // Insercion en periodo
     periodo = stoi(periodoMuestreo);
-    //person_id = stoi(personaClaseID);
-    //car_id = stoi(autoClaseID);
+    person_id = stoi(personaClaseID);
+    car_id = stoi(autoClaseID);
   }
   catch(const SettingNotFoundException &nfex)
   {
@@ -102,17 +117,24 @@ int parseConfigFile ()
       for(int i = 0; i < count; ++i)
       {
         const Setting &camara = camaras[i];
-        string lc, aforo;
-        if(!(camara.lookupValue("lc", lc) && camara.lookupValue("aforo", aforo)))
+        string lc_person, lc_car, roi_person, roi_car;
+        if(!(camara.lookupValue("lc_person", lc_person) && camara.lookupValue("roi_person", roi_person)
+	      && camara.lookupValue("lc_car", lc_car) && camara.lookupValue("roi_car", roi_car)))
           continue;
         //cout << setw(30) << lc << "  " << aforo << "  " << endl;
       
         //Insercion maps
-        aux = split (lc, ',');
-        lcs.insert(pair<int, vector<string>>(stoi(camara_id), aux ));
+        aux = split (lc_person, ',');
+        name_lc_person.insert(pair<int, vector<string>>(stoi(camara_id), aux ));
+	
+	aux = split (lc_car, ',');        
+	name_lc_car.insert(pair<int, vector<string>>(stoi(camara_id), aux ));
 
-        aux = split (aforo, ',');
-        rois.insert(pair<int, vector<string>>(stoi(camara_id), aux));
+	aux = split (roi_person, ',');
+        name_roi_person.insert(pair<int, vector<string>>(stoi(camara_id), aux));
+
+        aux = split (roi_car, ',');
+        name_roi_car.insert(pair<int, vector<string>>(stoi(camara_id), aux));
       }
       //cout << endl;
     }
@@ -131,10 +153,16 @@ bool statusAnalitica(int id, int tipo)
 
   switch(tipo){
     case 0:
-      v = lcs;
+      v = name_lc_person;
       break;
     case 1:
-      v = rois;
+      v = name_lc_car;
+      break;
+    case 2:
+      v = name_roi_person;
+      break;
+    case 3:
+      v = name_roi_car;
       break;
     default:
       return false;
@@ -154,11 +182,22 @@ bool statusAnalitica(int id, int tipo)
 void initCounts () 
 {
   vector<int> temp(10,0);
+
   for (int id : ids) {
-    if (statusAnalitica(id, 0))
-      lcs_count.insert(pair<int, vector<int>>(id, temp));
-    if (statusAnalitica(id, 1))
-      rois_count.insert(pair<int, vector<int>>(id, temp));
+    if (statusAnalitica(id, 0) && person_id != -1)
+      count_lc_person.insert(pair<int, vector<int>>(id, temp));
+    if (statusAnalitica(id, 1) && car_id != -1)
+      count_lc_car.insert(pair<int, vector<int>>(id, temp));
+    if (statusAnalitica(id, 2) && person_id != -1) {
+      count_roi_person.insert(pair<int, vector<int>>(id, temp));
+      max_count_roi_person.insert(pair<int, vector<int>>(id, temp));
+      min_count_roi_person.insert(pair<int, vector<int>>(id, temp));
+    }
+    if (statusAnalitica(id, 3) && car_id != -1) {
+      count_roi_car.insert(pair<int, vector<int>>(id, temp));
+      max_count_roi_car.insert(pair<int, vector<int>>(id, temp));
+      min_count_roi_car.insert(pair<int, vector<int>>(id, temp));
+    }
   }
 }
 
@@ -184,11 +223,295 @@ extern "C" int getPeriodo()
   return periodo;
 }
 
-extern "C" void getLCCount (NvDsFrameMeta *frame_meta, NvDsEventMsgMeta *lc_data) 
+extern "C" int getPersonID ()
+{
+  return person_id;
+}
+
+extern "C" int getCarID ()
+{
+  return car_id;
+}
+
+extern "C" bool checkAnalytic (int source, int tipo) 
+{
+  int cam_id = ids[source];
+  bool res = statusAnalitica(cam_id, tipo);
+  return res;
+}
+
+
+void checkMaxCount (int count, int index, int tipo, int cam_id)
+{
+  //cout << "MAX" << "\n" << 
+  //        "actual count: " << count << endl;
+
+  if (tipo == 0) {
+    //cout << "last count: " << max_count_roi_person[cam_id][index] << endl;
+    if ( count > max_count_roi_person[cam_id][index] )
+      max_count_roi_person[cam_id][index] = count;
+
+    //cout << "new count: " << max_count_roi_person[cam_id][index] << "\n" <<
+    //        "----------------------------------------" << endl;
+  }
+  else if (tipo == 1) {
+    //cout << "last count: " << max_count_roi_car[cam_id][index] << endl;
+    if ( count > max_count_roi_car[cam_id][index] )
+      max_count_roi_car[cam_id][index] = count;
+
+    //cout << "new count: " << max_count_roi_car[cam_id][index] << "\n" <<
+    //        "----------------------------------------" << endl;
+  }
+}
+
+void checkMinCount (int count, int index, int tipo, int cam_id)
+{
+  //cout << "MIN" << "\n" <<
+  //	  "actual count: " << count << endl;
+  if (tipo == 0) {
+    if (min_count_person_flag && count != 0) {
+      min_count_roi_person[cam_id][index] = count;
+      min_count_person_flag = false;
+    }
+    //cout << "last count: " << min_count_roi_person[cam_id][index] << endl;
+    if ( count < min_count_roi_person[cam_id][index] )
+      min_count_roi_person[cam_id][index] = count;
+
+    //cout << "new count: " << min_count_roi_person[cam_id][index] << "\n" <<
+    //	    "----------------------------------------" << endl;
+  }
+  else if (tipo == 1) {
+    if (min_count_car_flag && count != 0) {
+      min_count_roi_car[cam_id][index] = count;
+      min_count_car_flag = false;
+    }
+    //cout << "last count: " << min_count_roi_car[cam_id][index] << endl;
+    if ( count < min_count_roi_car[cam_id][index] )
+      min_count_roi_car[cam_id][index] = count;
+
+    //cout << "new count: " << min_count_roi_car[cam_id][index] << "\n" <<
+    //        "----------------------------------------" << endl;
+  }
+}
+
+void updateROICount (NvDsAnalyticsFrameMeta *analytics_frame_meta, int tipo, int cam_id) 
+{
+  int aux = 1;
+  vector<string> iter;
+  vector<string>::iterator it;
+  
+  if (tipo == 0)
+    iter = name_roi_person[cam_id];
+  else if (tipo == 1)
+    iter = name_roi_car[cam_id];
+
+  for ( it = iter.begin() + 1; it != iter.end(); it++ ) {
+    
+    if (tipo == 0) {
+      checkMaxCount (analytics_frame_meta->objInROIcnt[*it], aux, 0, cam_id);
+      checkMinCount (analytics_frame_meta->objInROIcnt[*it], aux, 0, cam_id);
+
+      count_roi_person[cam_id][aux] = analytics_frame_meta->objInROIcnt[*it]
+                                       + count_roi_person[cam_id][aux];
+    }
+    else if (tipo == 1) {
+      checkMaxCount (analytics_frame_meta->objInROIcnt[*it], aux, 1, cam_id);
+      checkMinCount (analytics_frame_meta->objInROIcnt[*it], aux, 1, cam_id);
+
+      count_roi_car[cam_id][aux] = analytics_frame_meta->objInROIcnt[*it]
+                                    + count_roi_car[cam_id][aux];
+    }
+    aux++;
+    /*
+    cout << *it << "\n" <<
+          "person: " << person_rois_count[cam_id][aux] << "\n" <<
+          "car: " << car_rois_count[cam_id][aux] << "\n" <<
+          "----------------------------------------" << endl;
+    */
+  }
+}
+
+extern "C" void updateFrameCount (NvDsFrameMeta *frame_meta)
+{ 
+  int source = frame_meta->source_id;
+  int cam_id = ids[source];
+
+  for (NvDsMetaList * l_user = frame_meta->frame_user_meta_list;l_user != NULL; l_user = l_user->next) {
+    NvDsUserMeta *user_meta = (NvDsUserMeta *) l_user->data;
+
+    if (user_meta->base_meta.meta_type == NVDS_USER_FRAME_META_NVDSANALYTICS) {
+      NvDsAnalyticsFrameMeta *analytics_frame_meta =
+        (NvDsAnalyticsFrameMeta *) user_meta->user_meta_data;
+      
+      if ( checkAnalytic(source, 2) ) {
+	checkMaxCount (analytics_frame_meta->objCnt[person_id], 0, 0, cam_id);
+	checkMinCount (analytics_frame_meta->objCnt[person_id], 0, 0, cam_id);
+
+	count_roi_person[cam_id][0] = analytics_frame_meta->objCnt[person_id]  
+                                       + count_roi_person[cam_id][0];
+        if ( name_roi_person[cam_id].size() > 1 )
+	  updateROICount (analytics_frame_meta, 0, cam_id);
+      }
+      
+
+      if ( checkAnalytic(source, 3) ) {
+	checkMaxCount (analytics_frame_meta->objCnt[car_id], 0, 1, cam_id);
+        checkMinCount (analytics_frame_meta->objCnt[car_id], 0, 1, cam_id);
+
+        count_roi_car[cam_id][0] = analytics_frame_meta->objCnt[car_id] 
+		                    + count_roi_car[cam_id][0];
+	if ( name_roi_car[cam_id].size() > 1)
+	  updateROICount (analytics_frame_meta, 1, cam_id);
+      }
+
+    }
+  }
+  /*
+  cout << "TOTAL FRAME COUNT" << "\n" <<
+	  "person: " << person_rois_count[cam_id][0] << "\n" <<
+  	  "car: " << car_rois_count[cam_id][0] << "\n" << 
+  	  "----------------------------------------" << endl;
+  */
+}
+
+void setAvgFrameCount (NvDsEventMsgMeta *roi_data, int tipo, int cam_id)
+{
+  int aux = 0;
+  int total_frames = roi_data->aframe_fin - roi_data->aframe_init;
+
+  vector<string> iter;
+
+  if ( tipo == 0)
+    iter = name_roi_person[cam_id];
+  else if ( tipo == 1)
+    iter = name_roi_car[cam_id];
+
+  roi_data->acamera_id = cam_id;
+  roi_data->afreq = periodo;
+  roi_data->aanalytic = 1;
+
+  for ( string name : iter) {
+    if (tipo == 0) {
+      roi_data->aavg_person_count[aux] = count_roi_person[cam_id][aux] / total_frames;
+      roi_data->aperson_max_count[aux] = max_count_roi_person[cam_id][aux];
+      roi_data->aperson_min_count[aux] = min_count_roi_person[cam_id][aux];
+      roi_data->aperson_roi_id[aux] = aux;
+     
+      /*
+      cout << "roi name: " << name << "\n" <<
+	      "PERSON"  << "\n" <<
+	      "total frames: " << total_frames << "\n" <<
+	      "count: " << count_roi_person[cam_id][aux] << "\n" <<
+	      "avg: " << roi_data->aavg_person_count[aux] << "\n" <<
+	      "max: " << roi_data->aperson_max_count[aux] << "\n" <<
+	      "min: " << roi_data->aperson_min_count[aux] << "\n" <<
+	      "--------------------------------------------" << endl;
+      */
+
+      count_roi_person[cam_id][aux] = 0;
+      max_count_roi_person[cam_id][aux] = 0;
+      min_count_roi_person[cam_id][aux] = 100;
+    }
+
+    else if (tipo == 1) {
+      roi_data->aavg_car_count[aux] = count_roi_car[cam_id][aux] / total_frames;
+      roi_data->acar_max_count[aux] = max_count_roi_car[cam_id][aux];
+      roi_data->acar_min_count[aux] = min_count_roi_car[cam_id][aux];
+      roi_data->acar_roi_id[aux] = aux;
+      
+      /*
+      cout << "roi name: " << name << "\n" <<
+              "CAR"  << "\n" <<
+              "total frames: " << total_frames << "\n" <<
+              "count: " << count_roi_car[cam_id][aux] << "\n" <<
+              "avg: " << roi_data->aavg_car_count[aux] << "\n" <<
+              "max: " << roi_data->acar_max_count[aux] << "\n" <<
+              "min: " << roi_data->acar_min_count[aux] << "\n" <<
+              "--------------------------------------------" << endl;
+      */
+
+      count_roi_car[cam_id][aux] = 0;
+      max_count_roi_car[cam_id][aux] = 0;
+      min_count_roi_car[cam_id][aux] = 100;
+    }
+
+    aux++;
+  }
+
+  if ( tipo == 0 )
+    roi_data->aperson_array = aux;
+  else if ( tipo == 1 )
+    roi_data->acar_array = aux;
+}
+
+extern "C" void getAvgFrameCount (NvDsEventMsgMeta *roi_data, int source, int tipo)
+{
+  int cam_id = ids[source];
+  
+  if ( checkAnalytic(source, 2) && tipo == 0 )
+    setAvgFrameCount (roi_data, tipo, cam_id);
+  else if ( checkAnalytic(source, 3) && tipo == 1 )
+    setAvgFrameCount (roi_data, tipo, cam_id);
+
+  //cout << "person avg: " << roi_data->aperson_count[source] << "\n" <<
+  //        "car avg: " << roi_data->acar_count[source] << "\n" <<
+  //        "----------------------------------------" <<endl;     
+}
+
+void setLCCount (NvDsAnalyticsFrameMeta *analytics_frame_meta, NvDsEventMsgMeta *lc_data, 
+		int tipo, int cam_id)
+{
+  int aux = 0;
+  vector<string> iter;
+
+  lc_data->fcamera_id = cam_id;
+  lc_data->ffreq = periodo;
+  lc_data->fanalytic = 0;
+
+  if (tipo == 0)
+    iter = name_lc_person[cam_id];
+  else if (tipo == 1)
+    iter = name_lc_car[cam_id];
+    
+  for (string name : iter) {
+    /*
+    if (tipo == 0) {
+      cout << name << " \n"
+           << "last count: " << person_lcs_count[cam_id][aux] << "\n"
+           << "actual count: " << (int) analytics_frame_meta->objLCCumCnt[name]
+                                  - person_lcs_count[cam_id][aux] << "\n"
+           << "total count: " << (int) analytics_frame_meta->objLCCumCnt[name] << "\n"
+           << "line_id: " << aux << "\n"
+           << "--------------------------------------" << endl;
+    }
+    */
+    
+    if (tipo == 0) {
+      lc_data->fperson_count[aux] = (int) analytics_frame_meta->objLCCumCnt[name] 
+	                                  - count_lc_person[cam_id][aux];
+      count_lc_person[cam_id][aux] = (int) analytics_frame_meta->objLCCumCnt[name];
+      lc_data->fperson_line_id[aux] = aux;
+    }
+
+    else if (tipo == 1) {
+      lc_data->fcar_count[aux] = (int) analytics_frame_meta->objLCCumCnt[name] 
+	                               - count_lc_car[cam_id][aux];
+      count_lc_car[cam_id][aux] = (int) analytics_frame_meta->objLCCumCnt[name];
+      lc_data->fcar_line_id[aux] = aux;
+    }
+    aux++;
+  }
+
+  if (tipo == 0)
+    lc_data->fperson_array = aux;
+  else if (tipo == 1)
+    lc_data->fcar_array = aux;
+}
+
+extern "C" void getLCCount (NvDsFrameMeta *frame_meta, NvDsEventMsgMeta *lc_data, int tipo) 
 {
   int source = frame_meta->source_id;
   int cam_id = ids[source];
-  int aux = 0;
 
   for (NvDsMetaList * l_user = frame_meta->frame_user_meta_list;l_user != NULL; l_user = l_user->next) {
     NvDsUserMeta *user_meta = (NvDsUserMeta *) l_user->data;
@@ -196,31 +519,12 @@ extern "C" void getLCCount (NvDsFrameMeta *frame_meta, NvDsEventMsgMeta *lc_data
     if (user_meta->base_meta.meta_type == NVDS_USER_FRAME_META_NVDSANALYTICS) {
       NvDsAnalyticsFrameMeta *analytics_frame_meta = 
         (NvDsAnalyticsFrameMeta *) user_meta->user_meta_data;
-  
-      for (string lc_name : lcs[cam_id]) {
-	      /*
-        if (lc_name == "entry") {
-	        cout << lc_name << " \n"
-               << "last count: " << lcs_count[cam_id][aux] << "\n"
-	             << "actual count: " << (int) analytics_frame_meta->objLCCumCnt[lc_name] - lcs_count[cam_id][aux] << "\n" 
-               << "total count: " << (int) analytics_frame_meta->objLCCumCnt[lc_name] << "\n"
-	             << "id: " << aux << "\n"
-	             << "--------------------------------------" << endl;
-	      }
-        */
-	      lc_data->fcount[aux] = (int) analytics_frame_meta->objLCCumCnt[lc_name] - lcs_count[cam_id][aux];
-        lcs_count[cam_id][aux] = (int) analytics_frame_meta->objLCCumCnt[lc_name];
-	      lc_data->fline_id[aux] = aux;
-        aux++;
-      }
+      
+      if ( checkAnalytic(source, 0) && tipo == 0 )
+        setLCCount (analytics_frame_meta, lc_data, 0, cam_id);
+      else if ( checkAnalytic(source, 1) && tipo == 1)
+        setLCCount (analytics_frame_meta, lc_data, 1, cam_id);
     }
   }
-
-  lc_data->fcamera_id = cam_id;
-  lc_data->ffreq = periodo;
-  lc_data->fanalytic = 0;
-  lc_data->fobj_type = 0;
-  lc_data->fsize_array = aux;
-  
 }
 
