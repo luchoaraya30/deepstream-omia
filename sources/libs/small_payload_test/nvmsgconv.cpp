@@ -23,6 +23,7 @@
 #include <bits/stdc++.h>
 #include <chrono>
 #include <ctime>
+#include <time.h>
 
 using namespace std;
 
@@ -106,6 +107,18 @@ time_t getTimestamp() {
     const auto p1 = std::chrono::system_clock::now();
     std::time_t today_time = std::chrono::system_clock::to_time_t(p1);
     return today_time;
+}
+
+string getTimestampV2() {
+  time_t rawtime;
+  struct tm *ptm;
+
+  time (&rawtime);
+  ptm = localtime(&rawtime);
+
+  string s = to_string(ptm->tm_year + 1900) + "-" + to_string(ptm->tm_mon + 1) + "-" + to_string(ptm->tm_mday) + " " +
+             to_string(ptm->tm_hour) + ":" + to_string(ptm->tm_min) + ":" + to_string(ptm->tm_sec);
+  return s;
 }
 
 string getString (int *numeros, int size, int shift)
@@ -789,13 +802,15 @@ generate_schema_message (NvDsMsg2pCtx *ctx, NvDsEventMsgMeta *meta)
 
   // event object
   //eventObj = generate_event_object (ctx, meta);
-  time_t now = getTimestamp();
+  //time_t now = getTimestamp();
+  string now = getTimestampV2();
 
   // root object
   rootObj = json_object_new ();
   json_object_set_string_member (rootObj, "messageid", msgIdStr);
   //json_object_set_string_member (rootObj, "mdsversion", "1.0");
-  json_object_set_string_member (rootObj, "@timestamp", std::ctime(&now));
+  //json_object_set_string_member (rootObj, "@timestamp", std::ctime(&now));
+  json_object_set_string_member (rootObj, "@timestamp", now.data());
   //json_object_set_object_member (rootObj, "place", placeObj);
   //json_object_set_object_member (rootObj, "sensor", sensorObj);
 
