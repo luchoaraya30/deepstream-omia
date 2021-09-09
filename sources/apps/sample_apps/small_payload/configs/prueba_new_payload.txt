@@ -49,7 +49,7 @@ gpu-id=0
 nvbuf-memory-type=0
 
 [sink1]
-enable=1
+enable=0
 #Type - 1=FakeSink 2=EglSink 3=File 4=RTSPStreaming
 type=3
 #1=mp4 2=mkv
@@ -67,7 +67,7 @@ profile=4
 output-file=out.mp4
 source-id=0
 
-[sink1]
+[sink2]
 enable=1
 #Type - 1=FakeSink 2=EglSink 3=File 4=UDPSink 5=nvoverlaysink 6=MsgConvBroker
 type=6

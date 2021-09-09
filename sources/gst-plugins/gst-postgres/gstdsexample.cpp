@@ -668,7 +668,6 @@ string createTraza(int c_id)
 }
 
 void dev_query_dk(NvDsFrameMeta *frame_meta) {
-  //connection C((const char *)"dbname=postgres user=digevo password=Digevobd* host=database-omia.ccco8vwbpupr.us-west-2.rds.amazonaws.com port=5432");
   connection C((const char *)"dbname=postgres user=postgres password=password host=localhost port=8765");
   work W{C};
 
@@ -687,7 +686,6 @@ void dev_query_dk(NvDsFrameMeta *frame_meta) {
 }
 
 void query_dk(NvDsFrameMeta *frame_meta) {
-  //connection C((const char *)"dbname=postgres user=digevo password=Digevobd* host=database-omia.ccco8vwbpupr.us-west-2.rds.amazonaws.com port=5432");
   connection C((const char *)"dbname=postgres user=postgres password=password host=localhost port=8765");
   work W{C};
 
@@ -706,8 +704,7 @@ void query_dk(NvDsFrameMeta *frame_meta) {
 
 void fastQuery(int type, int source, string info) {
 
-  connection C((const char *)"dbname=postgres user=digevo password=Digevobd* host=database-omia.ccco8vwbpupr.us-west-2.rds.amazonaws.com port=5432");
-  //connection C((const char *)"dbname=postgres user=postgres password=password host=localhost port=8765");
+  connection C((const char *)"dbname=postgres user=postgres password=password host=localhost port=8765");
   work W{C};
 
   if (type == 0) {
@@ -732,8 +729,7 @@ void fastQuery(int type, int source, string info) {
 
 void devFastQuery(int type, int source, string info) {
 
-  connection C((const char *)"dbname=postgres user=digevo password=Digevobd* host=database-omia.ccco8vwbpupr.us-west-2.rds.amazonaws.com port=5432");
-  //connection C((const char *)"dbname=postgres user=postgres password=password host=localhost port=8765");
+  connection C((const char *)"dbname=postgres user=postgres password=password host=localhost port=8765");
   work W{C};
 
   if (type == 0) {
@@ -759,7 +755,6 @@ void devFastQuery(int type, int source, string info) {
 void query(string detection, string person, string vehicle, string diff)
 {
   try{
-    //connection C((const char *)"dbname=postgres user=digevo password=Digevobd* host=database-omia.ccco8vwbpupr.us-west-2.rds.amazonaws.com port=5432");
     connection C((const char *)"dbname=postgres user=postgres password=password host=localhost port=8765");
     std::cout << "Connected to " << C.dbname() << std::endl;
     work W{C};
@@ -908,7 +903,6 @@ void query(string detection, string person, string vehicle, string diff)
 void dev_query(string detection, string person, string vehicle, string diff)
 {
   try{
-    //connection C((const char *)"dbname=postgres user=digevo password=Digevobd* host=database-omia.ccco8vwbpupr.us-west-2.rds.amazonaws.com port=5432");
     connection C((const char *)"dbname=postgres user=postgres password=password host=localhost port=8765");
     std::cout << "Connected to " << C.dbname() << std::endl;
     work W{C};
