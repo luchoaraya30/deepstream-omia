@@ -29,6 +29,8 @@ using namespace libconfig;
 int periodo = -1;
 int person_id = -1;
 int car_id = -1;
+int permanencia = -1;
+int heatmap = -1
 
 bool config_parsed = false;
 bool min_count_person_flag = true;
@@ -45,6 +47,12 @@ map<int, vector<int>> count_lc_person;
 map<int, vector<int>> count_lc_car;
 map<int, vector<int>> count_roi_person;
 map<int, vector<int>> count_roi_car;
+
+map<int, vector<int>> ids_roi_person;
+map<int, vector<int>> ids_roi_car;
+
+map<int, vector<string>> bbox_person;
+map<int, vector<string>> bbox_car;
 
 map<int, vector<int>> max_count_roi_person;
 map<int, vector<int>> max_count_roi_car;
@@ -93,6 +101,8 @@ int parseConfigFile ()
     string personaClaseID = cfg.lookup("personaClaseID");
     string autoClaseID = cfg.lookup("autoClaseID");
     string camarasActivas = cfg.lookup("camarasActivas");
+    string flagPermanencia = cfg.lookup("permanencia");
+    string flagHeatmap = cfg.lookup("heatmap");
 
     //cout << "Periodo: " << periodoMuestreo << endl <<"Camaras " << camarasActivas << endl;
     v = split (camarasActivas, ',');
@@ -101,6 +111,8 @@ int parseConfigFile ()
     periodo = stoi(periodoMuestreo);
     person_id = stoi(personaClaseID);
     car_id = stoi(autoClaseID);
+    permanencia = stoi(flagPermanencia);
+    heatmap = stoi(flagHeatmap);
   }
   catch(const SettingNotFoundException &nfex)
   {
@@ -331,10 +343,29 @@ void updateROICount (NvDsAnalyticsFrameMeta *analytics_frame_meta, int tipo, int
   }
 }
 
+void addObjIDSandBBOX (NvDsFrameMeta *frame_meta)
+{
+  int source = frame_meta->source_id;
+  int cam_id = ids[source];
+
+  for (NvDsMetaList * l_obj = frame_meta->obj_meta_list; l_obj != NULL; l_obj = l_obj->next) {
+    NvDsObjectMeta *obj_meta = (NvDsObjectMeta *) l_obj->data;
+
+    int id = obj_meta->object_id;
+    int left = (int) obj_meta->rect_params.left;
+    int width = (int) obj_meta->rect_params.width;
+    int top = (int) obj_meta->rect_params.top;
+    int height = (int) obj_meta->rect_params.height;
+  }
+}
+
 extern "C" void updateFrameCount (NvDsFrameMeta *frame_meta)
 { 
   int source = frame_meta->source_id;
   int cam_id = ids[source];
+
+  if (permanencia || heatmap)
+    addObjIDSandBBOX (frame_meta);
 
   for (NvDsMetaList * l_user = frame_meta->frame_user_meta_list;l_user != NULL; l_user = l_user->next) {
     NvDsUserMeta *user_meta = (NvDsUserMeta *) l_user->data;
