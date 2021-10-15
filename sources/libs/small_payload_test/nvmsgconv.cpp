@@ -347,12 +347,15 @@ generate_analytics_module_object (NvDsMsg2pCtx *ctx, NvDsEventMsgMeta *meta, int
      }
    */
   
-  string ids, counts;
+  string ids, counts, 
+	 female_count, male_count, 
+	 age_0_count, age_1_count, age_2_count, age_3_count, age_4_count, age_5_count;
+
   // analytics object
   analyticsObj = json_object_new ();
   // este id viene desde el archivo de configuracion del payload
   //json_object_set_string_member (analyticsObj, "camera_id", dsObj->id.c_str());
-  json_object_set_int_member (analyticsObj, "camera_id", meta->fcamera_id);
+  //json_object_set_int_member (analyticsObj, "camera_id", meta->fcamera_id);
   
   // generate payload
   if (tipo == 0) {
@@ -375,6 +378,30 @@ generate_analytics_module_object (NvDsMsg2pCtx *ctx, NvDsEventMsgMeta *meta, int
   json_object_set_int_member (analyticsObj, "obj_type", meta->fobj_type);
   json_object_set_string_member (analyticsObj, "line_id", ids.data());
   json_object_set_string_member (analyticsObj, "count", counts.data());
+
+  if (meta->gender_active == 1) {
+    male_count = getString(meta->male_count, meta->fperson_array, 0);
+    female_count = getString(meta->female_count, meta->fperson_array, 0);
+
+    json_object_set_string_member (analyticsObj, "males", male_count.data());
+    json_object_set_string_member (analyticsObj, "females", female_count.data());
+  }
+
+  if (meta->age_active == 1) {
+    age_0_count = getString(meta->age_0_count, meta->fperson_array, 0);
+    age_1_count = getString(meta->age_1_count, meta->fperson_array, 0);
+    age_2_count = getString(meta->age_2_count, meta->fperson_array, 0);
+    age_3_count = getString(meta->age_3_count, meta->fperson_array, 0);
+    age_4_count = getString(meta->age_4_count, meta->fperson_array, 0);
+    age_5_count = getString(meta->age_5_count, meta->fperson_array, 0);
+
+    json_object_set_string_member (analyticsObj, "age_1_10", age_0_count.data());
+    json_object_set_string_member (analyticsObj, "age_11_18", age_1_count.data());
+    json_object_set_string_member (analyticsObj, "age_19_35", age_2_count.data());
+    json_object_set_string_member (analyticsObj, "age_36_50", age_3_count.data());
+    json_object_set_string_member (analyticsObj, "age_51_64", age_4_count.data());
+    json_object_set_string_member (analyticsObj, "age_65", age_5_count.data());
+  }
 
   return analyticsObj;
 }
@@ -399,50 +426,35 @@ generate_roi_module_object (NvDsMsg2pCtx *ctx, NvDsEventMsgMeta *meta, int tipo)
     return NULL;
   }
 
-  /* analytics object
-   * "analyticsModule": {
-       "id": "string",
-       "description": "Vehicle Detection and License Plate Recognition",
-       "confidence": 97.79,
-       "source": "OpenALR",
-       "version": "string"
-     }
-   */
-
-  string ids, counts, maxs, mins;
-  // analytics object
+  string counts, person_ids, car_ids;
   analyticsObj = json_object_new ();
-  // este id viene desde el archivo de configuracion del payload
-  //json_object_set_string_member (analyticsObj, "camera_id", dsObj->id.c_str());
-  json_object_set_int_member (analyticsObj, "camera_id", meta->fcamera_id);
 
-  // generate payload
   if (tipo == 0) {
-    ids = getString(meta->aperson_roi_id, meta->aperson_array, 0);
     counts = getString(meta->aavg_person_count, meta->aperson_array, 0);
-    maxs = getString(meta->aperson_max_count, meta->aperson_array, 0);
-    mins = getString(meta->aperson_min_count, meta->aperson_array, 0);
+    
+    // 0 -> person ------ 1 -> car
     meta->aobj_type = 0;
   }
   else if (tipo == 1) {
-    ids = getString(meta->acar_roi_id, meta->acar_array, 0);
     counts = getString(meta->aavg_car_count, meta->acar_array, 0);
-    maxs = getString(meta->acar_max_count, meta->acar_array, 0);
-    mins = getString(meta->acar_min_count, meta->acar_array, 0);
-    if (meta->aperson_array)
-      ids = getString(meta->acar_roi_id, meta->acar_array, meta->aperson_array);
     meta->aobj_type = 1;
   }
 
   json_object_set_int_member (analyticsObj, "frame_init", meta->aframe_init);
   json_object_set_int_member (analyticsObj, "frame_fin", meta->aframe_fin);
   json_object_set_int_member (analyticsObj, "period", meta->afreq);
-  json_object_set_int_member (analyticsObj, "analytic", meta->aanalytic);
   json_object_set_int_member (analyticsObj, "obj_type", meta->aobj_type);
-  json_object_set_string_member (analyticsObj, "roi_id", ids.data());
   json_object_set_string_member (analyticsObj, "count", counts.data());
-  json_object_set_string_member (analyticsObj, "max", maxs.data());
-  json_object_set_string_member (analyticsObj, "min", mins.data());
+
+  if (meta->permanencia_person == 1) {
+    person_ids = getString(meta->person_ids, meta->person_size, 0);
+    json_object_set_string_member (analyticsObj, "ids", person_ids.data());
+  }
+
+  else if (meta->permanencia_car == 1) {
+    car_ids = getString(meta->car_ids, meta->car_size, 0);
+    json_object_set_string_member (analyticsObj, "ids", car_ids.data());
+  }
 
   return analyticsObj;
 }
@@ -781,71 +793,35 @@ generate_schema_message (NvDsMsg2pCtx *ctx, NvDsEventMsgMeta *meta)
   uuid_generate_random (msgId);
   uuid_unparse_lower(msgId, msgIdStr);
 
-  // place object
-  //placeObj = generate_place_object (ctx, meta);
-
-  // sensor object
-  //sensorObj = generate_sensor_object (ctx, meta);
-
-  // analytics object
-  //cout << meta->fline_id << endl;
-  
-//  if (meta->fperson_array)
-//    lc_car_obj = generate_analytics_module_object (ctx, meta, 0);
-  
-//  if (meta->fcar_array)
-//    lc_car_obj = generate_analytics_module_object (ctx, meta, 1);
-
-
-  // object object
-  //objectObj = generate_object_object (ctx, meta);
-
-  // event object
-  //eventObj = generate_event_object (ctx, meta);
-  //time_t now = getTimestamp();
   string now = getTimestampV2();
 
   // root object
   rootObj = json_object_new ();
   json_object_set_string_member (rootObj, "messageid", msgIdStr);
-  //json_object_set_string_member (rootObj, "mdsversion", "1.0");
-  //json_object_set_string_member (rootObj, "@timestamp", std::ctime(&now));
   json_object_set_string_member (rootObj, "@timestamp", now.data());
-  //json_object_set_object_member (rootObj, "place", placeObj);
-  //json_object_set_object_member (rootObj, "sensor", sensorObj);
+  //json_object_set_int_member (rootObj, "camera_id", meta->fcamera_id);
 
   if (meta->fperson_array) {
-    //meta->componentId = 1;
+    json_object_set_int_member (rootObj, "camera_id", meta->fcamera_id);
     lc_person_obj = generate_analytics_module_object (ctx, meta, 0);
     json_object_set_object_member (rootObj, "lc_person", lc_person_obj);
   }
   if (meta->fcar_array) {
-    //meta->componentId = 1;
+    json_object_set_int_member (rootObj, "camera_id", meta->fcamera_id);
     lc_car_obj = generate_analytics_module_object (ctx, meta, 1);
     json_object_set_object_member (rootObj, "lc_car", lc_car_obj);
   }
 
   if (meta->aperson_array) {
-    //meta->componentId = 2;
+    json_object_set_int_member (rootObj, "camera_id", meta->acamera_id);
     roi_person_obj = generate_roi_module_object (ctx, meta, 0);
     json_object_set_object_member (rootObj, "roi_person", roi_person_obj);
   }
   if (meta->acar_array) {
-    //meta->componentId = 2;
+    json_object_set_int_member (rootObj, "camera_id", meta->acamera_id);
     roi_car_obj = generate_roi_module_object (ctx, meta, 1);
     json_object_set_object_member (rootObj, "roi_car", roi_car_obj);
   }
-
-  //json_object_set_object_member (rootObj, "object", objectObj);
-  //json_object_set_object_member (rootObj, "event", eventObj);
-  
-  //------------------------------------------------------------------------//
-
-
-  //if (meta->videoPath)
-    //json_object_set_string_member (rootObj, "videoPath", meta->videoPath);
-  //else
-    //json_object_set_string_member (rootObj, "videoPath", "");
 
   rootNode = json_node_new (JSON_NODE_OBJECT);
   json_node_set_object (rootNode, rootObj);
