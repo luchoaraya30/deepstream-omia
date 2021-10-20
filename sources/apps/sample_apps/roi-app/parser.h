@@ -5,6 +5,7 @@
 #include <string>
 
 int getPersonID ();
+int getPermanencia ();
 int parseConfigFile ();
 
 extern "C" int getSecond ();

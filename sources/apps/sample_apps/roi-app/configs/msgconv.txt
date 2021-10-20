@@ -2,7 +2,7 @@
 enable=1
 
 [analytics1]
-enable=1
+enable=0
 
 [analytics2]
 enable=0

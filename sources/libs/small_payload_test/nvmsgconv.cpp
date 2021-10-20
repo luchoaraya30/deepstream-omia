@@ -426,7 +426,7 @@ generate_roi_module_object (NvDsMsg2pCtx *ctx, NvDsEventMsgMeta *meta, int tipo)
     return NULL;
   }
 
-  string counts, person_ids, car_ids;
+  string counts, ids;
   analyticsObj = json_object_new ();
 
   if (tipo == 0) {
@@ -445,16 +445,21 @@ generate_roi_module_object (NvDsMsg2pCtx *ctx, NvDsEventMsgMeta *meta, int tipo)
   json_object_set_int_member (analyticsObj, "period", meta->afreq);
   json_object_set_int_member (analyticsObj, "obj_type", meta->aobj_type);
   json_object_set_string_member (analyticsObj, "count", counts.data());
+  
+  if (meta->permanencia_is_active == 1) {
+    ids = getString(meta->permanencia_ids, meta->permanencia_size, 0);
+    json_object_set_string_member (analyticsObj, "ids", ids.data()); 
+  }
 
-  if (meta->permanencia_person == 1) {
+  /*if (meta->permanencia_person == 1) {
     person_ids = getString(meta->person_ids, meta->person_size, 0);
     json_object_set_string_member (analyticsObj, "ids", person_ids.data());
-  }
+  }*/
 
-  else if (meta->permanencia_car == 1) {
+  /*else if (meta->permanencia_car == 1) {
     car_ids = getString(meta->car_ids, meta->car_size, 0);
     json_object_set_string_member (analyticsObj, "ids", car_ids.data());
-  }
+  }*/
 
   return analyticsObj;
 }
@@ -782,9 +787,9 @@ generate_schema_message (NvDsMsg2pCtx *ctx, NvDsEventMsgMeta *meta)
   //JsonObject *eventObj;
   //JsonObject *objectObj;
   JsonObject *lc_person_obj;
-  JsonObject *lc_car_obj;
+  //JsonObject *lc_car_obj;
   JsonObject *roi_person_obj;
-  JsonObject *roi_car_obj;
+  //JsonObject *roi_car_obj;
   gchar *message;
 
   uuid_t msgId;
@@ -806,22 +811,22 @@ generate_schema_message (NvDsMsg2pCtx *ctx, NvDsEventMsgMeta *meta)
     lc_person_obj = generate_analytics_module_object (ctx, meta, 0);
     json_object_set_object_member (rootObj, "lc_person", lc_person_obj);
   }
-  if (meta->fcar_array) {
+  /*if (meta->fcar_array) {
     json_object_set_int_member (rootObj, "camera_id", meta->fcamera_id);
     lc_car_obj = generate_analytics_module_object (ctx, meta, 1);
     json_object_set_object_member (rootObj, "lc_car", lc_car_obj);
-  }
+  }*/
 
   if (meta->aperson_array) {
     json_object_set_int_member (rootObj, "camera_id", meta->acamera_id);
     roi_person_obj = generate_roi_module_object (ctx, meta, 0);
     json_object_set_object_member (rootObj, "roi_person", roi_person_obj);
   }
-  if (meta->acar_array) {
+  /*if (meta->acar_array) {
     json_object_set_int_member (rootObj, "camera_id", meta->acamera_id);
     roi_car_obj = generate_roi_module_object (ctx, meta, 1);
     json_object_set_object_member (rootObj, "roi_car", roi_car_obj);
-  }
+  }*/
 
   rootNode = json_node_new (JSON_NODE_OBJECT);
   json_node_set_object (rootNode, rootObj);

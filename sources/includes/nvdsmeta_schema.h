@@ -276,7 +276,8 @@ typedef struct NvDsEventMsgMeta {
   gpointer extMsg;
   /** Holds the size of the custom object at @a extMsg. */
   guint extMsgSize;
-
+  
+  /*
   //---------------------- CUSTOM CODE --------------------//
   // Object meta
   gint source_id;
@@ -299,6 +300,7 @@ typedef struct NvDsEventMsgMeta {
   const gchar *roi_name;
   gint lc_id;
   gint roi_id;
+  */
 
   // Flujo Meta
   gint fcamera_id;
@@ -313,23 +315,54 @@ typedef struct NvDsEventMsgMeta {
   gint fobj_type;
   gint fperson_array;
   gint fcar_array;
+  
   // Aforo Meta
+  // OLD
+  gint aanalytic;
+  gint aperson_max_count[10];
+  gint aperson_min_count[10];
+  gint acar_max_count[10];
+  gint acar_min_count[10];
+  gint aperson_roi_id[10];
+  gint acar_roi_id[10];
+  ////////
+
+  
+  // AFORO
   gint acamera_id;
   gint aframe_init;
   gint aframe_fin;
   gint afreq;
-  gint aperson_roi_id[100];
-  gint acar_roi_id[100];
-  gint aavg_person_count[100];
-  gint aavg_car_count[100];
-  gint aperson_max_count[100];
-  gint acar_max_count[100];
-  gint aperson_min_count[100];
-  gint acar_min_count[100];
-  gint aanalytic;
+  gint aavg_person_count[10];
+  gint aavg_car_count[10];
   gint aobj_type;
   gint aperson_array;
   gint acar_array;
+
+  // Permanencia OLD
+  gint person_ids[1000];
+  gint car_ids[1000];
+  gint person_size;
+  gint car_size;
+  gint permanencia_person;
+  gint permanencia_car;
+
+  // PERMANENCIA
+  gint permanencia_ids[1000];
+  gint permanencia_size;
+  gint permanencia_is_active;
+  
+  // Atributos Meta
+  gint age_active;
+  gint gender_active;
+  gint male_count[100];
+  gint female_count[100];
+  gint age_0_count[100];
+  gint age_1_count[100];
+  gint age_2_count[100];
+  gint age_3_count[100];
+  gint age_4_count[100];
+  gint age_5_count[100];
   //-----------------------------------------------------------------------------------------//
   //
 } NvDsEventMsgMeta;

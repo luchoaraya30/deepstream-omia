@@ -18,6 +18,7 @@ using namespace std;
 using namespace libconfig;
 
 int getPersonID ();
+int getPermanencia ();
 int parseConfigFile ();
 
 extern "C" int getSecond ();
@@ -31,6 +32,7 @@ map<int, vector<string>> getROINames ();
 
 int periodo = 0;
 int person_id = -1;
+int permanencia = 0;
 
 bool config_parsed = false;
 
@@ -79,6 +81,7 @@ int parseConfigFile ()
     string camarasActivas = cfg.lookup("camarasActivas");
     string periodoMuestreo = cfg.lookup("periodoMuestreo");
     string personaClaseID = cfg.lookup("personaClaseID");
+    string permanenciaCFG = cfg.lookup("permanencia");
 
     //cout << "Periodo: " << periodoMuestreo << endl <<"Camaras " << camarasActivas << endl;
     v = split (camarasActivas, ',');
@@ -86,6 +89,7 @@ int parseConfigFile ()
     // Insercion en periodo
     periodo = stoi(periodoMuestreo);
     person_id = stoi(personaClaseID);
+    permanencia = stoi(permanenciaCFG);
   }
 
   catch(const SettingNotFoundException &nfex)
@@ -157,6 +161,11 @@ extern "C" int getPeriodo ()
 int getPersonID ()
 {
   return person_id;
+}
+
+int getPermanencia ()
+{
+  return permanencia;
 }
 
 
