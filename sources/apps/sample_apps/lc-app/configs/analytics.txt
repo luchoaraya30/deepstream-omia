@@ -1,0 +1,39 @@
+[property]
+enable=1
+#Width height used for configuration to which below configs are configured
+config-width=1920
+config-height=1080
+#config-width=352
+#config-height=240
+osd-mode=2
+display-font-size=12
+
+[line-crossing-stream-0]
+enable=1
+#Label;direction;lc
+#line-crossing-i0=152;123;130;136;118;106;160;157
+#line-crossing-o0=130;136;152;123;160;157;118;106
+#line-crossing-i1=86;145;56;149;61;124;81;174
+#line-crossing-o1=56;149;86;145;81;174;61;124
+line-crossing-i0=960;900;960;700;100;800;1820;800
+line-crossing-o0=768;626;719;552;928;574;325;611
+class-id=-1
+#loose   : counts all crossing without strong adherence to direction
+#balanced: Strict direction adherence expected compared to mode=loose
+#strict  : Strict direction adherence expected compared to mode=balanced
+mode=loose
+
+[line-crossing-stream-1]
+enable=0
+line-crossing-entry=506;573;505;650;325;611;928;574
+line-crossing-exit=768;626;719;552;928;574;325;611
+class-id=-1
+mode=loose
+
+[roi-filtering-stream-0]
+enable=0
+roi-r1=0;229;957;254;965;821;0;816
+#remove objects in the ROI
+inverse-roi=0
+class-id=-1
+

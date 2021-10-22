@@ -1,0 +1,58 @@
+===============================================================================
+1. General
+===============================================================================
+
+Aplicación para obtener información de inferencia de modelo LPR y guardado en BD PostgreSQL, se almacena la "mejor" inferencia por cada OBJECT ID identificado. 
+Para un objeto único se obtiene la inferencia por cada frame en que esta presente, y esta se registra en memoria solo si tiene un largo de 7 u 8. Cuando una inferencia se repite en diferentes frames se aumenta su contador. 
+Finalmente el valor a almacenar en BD, para este objeto único, es la inferencia con el contador mas alto.
+
+===============================================================================
+2. Estructura tabla
+===============================================================================
+
+ ----------------------------------------------------------------
+|id_cc|fecha|hora|acceso_id|nombre_comercial_acceso|placa_patente|
+ ----------------------------------------------------------------
+
+===============================================================================
+3. Configuración aplicación
+===============================================================================
+
+En el archivo config_lpr.h se definen las credenciales para la BD y los parámetros id_cc, acceso_id y nombre_comercial_acceso.
+Modificar credenciales a criterio del usuario, y valores de parámetros dependiendo de la cantidad de cámaras configuradas.
+Por ejemplo si se procesan 2 cámaras las variables acceso_id y nombre_comercial_acceso deben tener valores 2 configurados.
+
+
+También se define la variable log, esta se utiliza para habilitar impresiones por pantalla de las placas a insertar en BD.
+
+En archivo de configuración pricipal de DS, grupo [secondary-gie] el parámetro gie-unique-id del modelo LPR debe ser 4. 
+
+===============================================================================
+4. Requisitos
+===============================================================================
+
+PostgreSQL y libpqxx
+
+  apt-get update
+  apt-get install -y postgresql postgresql-contrib libpqxx-4.0v5 libpq-dev libpqxx-dev
+
+===============================================================================
+5. Uso
+===============================================================================
+
+Compilar aplicación
+
+  export CUDA_VER=11.1
+  make install
+
+Correr aplicación
+  deepstream-test5-app -c ~/config.txt -t
+
+Si se realiza alguna cambio de configuración se debe volver a compilar.
+
+
+
+
+
+
+
