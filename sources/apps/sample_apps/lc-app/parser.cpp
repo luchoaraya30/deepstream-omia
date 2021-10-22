@@ -64,7 +64,7 @@ int parseConfigFile ()
 
   try
   {
-    cfg.readFile("configs/config.cfg");
+    cfg.readFile("/exterior/Documents/ds-configs-deploy/dk/-------/flujo/config.cfg");
   }
   catch(const FileIOException &fioex)
   {

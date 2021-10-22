@@ -277,44 +277,16 @@ typedef struct NvDsEventMsgMeta {
   /** Holds the size of the custom object at @a extMsg. */
   guint extMsgSize;
   
-  /*
   //---------------------- CUSTOM CODE --------------------//
-  // Object meta
-  gint source_id;
-  gint frame_id;
-  gint object_id;
-  gint count;
-  gchar *object_class;
-  // Bbox params
-  float left;
-  float top;
-  float width;
-  float height;
-  // Classifier meta
-  gchar *person_gender;
-  gchar *person_age;
-  gchar *car_color;
-  gchar *car_type;
-  // Analytics meta
-  const gchar *lc_name;
-  const gchar *roi_name;
-  gint lc_id;
-  gint roi_id;
-  */
-
+  
   // Flujo Meta
   gint fcamera_id;
   gint fframe_init;
   gint fframe_fin;
   gint ffreq;
-  gint fperson_line_id[100];
-  gint fcar_line_id[100];
-  gint fperson_count[100];
-  gint fcar_count[100];
-  gint fanalytic;
+  gint lc_count[10];
   gint fobj_type;
-  gint fperson_array;
-  gint fcar_array;
+  gint lc_names_size;
   
   // Aforo Meta
   // OLD
@@ -353,16 +325,23 @@ typedef struct NvDsEventMsgMeta {
   gint permanencia_is_active;
   
   // Atributos Meta
-  gint age_active;
-  gint gender_active;
-  gint male_count[100];
-  gint female_count[100];
-  gint age_0_count[100];
-  gint age_1_count[100];
-  gint age_2_count[100];
-  gint age_3_count[100];
-  gint age_4_count[100];
-  gint age_5_count[100];
+  gint sgie_names_size;
+  gint count_males[10];
+  gint count_females[10];
+
+  gint m_1_10[10];
+  gint m_11_18[10];
+  gint m_19_35[10];
+  gint m_36_50[10];
+  gint m_51_64[10];
+  gint m_gte_65[10];
+
+  gint f_1_10[10];
+  gint f_11_18[10];
+  gint f_19_35[10];
+  gint f_36_50[10];
+  gint f_51_64[10];
+  gint f_gte_65[10];
   //-----------------------------------------------------------------------------------------//
   //
 } NvDsEventMsgMeta;
