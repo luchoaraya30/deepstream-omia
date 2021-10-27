@@ -18,8 +18,8 @@ using namespace pqxx;
 
 #define SGIE_LPR 4
 
-int last_id[20] = {0};
-int actual_id[20] = {0};
+int last_count[20] = {0};
+int actual_count[20] = {0};
 
 map<string, int> plate;
 map<int, map<string, int>> plates;
@@ -114,10 +114,10 @@ void saveToPostgreSQL (const char * credentials, int source, string plate)
 
 }
 
-extern "C" void checkClassifierMeta (int source, NvDsObjectMeta *obj_meta)
+void checkClassifierMeta (int source, NvDsObjectMeta *obj_meta)
 {
   int yiro = 0;
-  actual_id[source] = obj_meta->object_id;
+  /*actual_id[source] = obj_meta->object_id;
 
   //cout << "source: " << source << " actual id: " << actual_id[source] << " last_id: " << last_id[source] << endl;
   if (last_id[source] != actual_id[source]) {
@@ -132,7 +132,7 @@ extern "C" void checkClassifierMeta (int source, NvDsObjectMeta *obj_meta)
     }
     plates[source].clear();
     last_id[source] = actual_id[source];
-  }
+  }*/
   
   if (obj_meta->classifier_meta_list != NULL) {
     for (NvDsMetaList * l_class = obj_meta->classifier_meta_list; l_class != NULL; l_class = l_class->next) {
@@ -144,26 +144,77 @@ extern "C" void checkClassifierMeta (int source, NvDsObjectMeta *obj_meta)
       for (GList * l_info = classifier_meta->label_info_list; l_info != NULL; l_info = l_info->next) {
         NvDsLabelInfo *labelInfo = (NvDsLabelInfo *) (l_info->data);
 
-	size_t size = strlen (labelInfo->result_label);
+	      size_t size = strlen (labelInfo->result_label);
 
-	if (size == 7 || size == 8) {
+	      if (size == 7 || size == 8) {
 
-	  string inference = labelInfo->result_label;
+	        string inference = labelInfo->result_label;
 	  
           if ( !checkLabel(source, inference) ) {
-	    plate.insert( pair<string, int> (inference, 1) );
-	    plates.insert( pair<int, map<string, int>> (source, plate));
-	    yiro = plates[source][inference];
-	    //cout << "count inference " << endl; //<< plates[source][inference] << endl;
-	  }
-	  else {
-	    plates[source].at(inference)++;
-	    yiro = plates[source][inference];
-	    //cout << "count inference " << endl; //plates[source][inference] << endl;
-	  }
-
-	}
+	          plate.insert( pair<string, int> (inference, 1) );
+	          plates.insert( pair<int, map<string, int>> (source, plate));
+	          yiro = plates[source][inference];
+	          //cout << "count inference " << endl; //<< plates[source][inference] << endl;
+	        }
+	        else {
+	          plates[source].at(inference)++;
+	          yiro = plates[source][inference];
+	          //cout << "count inference " << endl; //plates[source][inference] << endl;
+	        }
+	      }
       }
     }
   }
 }
+
+extern "C" void checkObjMeta (int source, NvDsObjectMeta *obj_meta)
+{
+  for (NvDsMetaList *l_user_meta = obj_meta->obj_user_meta_list; l_user_meta != NULL;l_user_meta = l_user_meta->next) {
+    NvDsUserMeta *user_meta = (NvDsUserMeta *) (l_user_meta->data);
+
+    if (user_meta->base_meta.meta_type == NVDS_USER_OBJ_META_NVDSANALYTICS) {
+      NvDsAnalyticsObjInfo * user_meta_data = (NvDsAnalyticsObjInfo *)user_meta->user_meta_data;
+
+      if ( user_meta_data->roiStatus.size() ) {
+        
+        for (string name : user_meta_data->roiStatus) {
+          if (name == "iz")
+            checkClassifierMeta (source, obj_meta);
+        }
+      }
+    }
+  }
+}
+
+extern "C" void checkFrameMeta (int source, NvDsFrameMeta *frame_meta)
+{
+  
+  for (NvDsMetaList * l_user = frame_meta->frame_user_meta_list;l_user != NULL; l_user = l_user->next) {
+    NvDsUserMeta *user_meta = (NvDsUserMeta *) l_user->data;
+
+    if (user_meta->base_meta.meta_type == NVDS_USER_FRAME_META_NVDSANALYTICS) {
+      NvDsAnalyticsFrameMeta *analytics_frame_meta = (NvDsAnalyticsFrameMeta *) user_meta->user_meta_data;
+      
+      actual_count[source] = (int) analytics_frame_meta->objLCCumCnt["sz"];
+    }
+  }
+	
+  //actual_id[source] = obj_meta->object_id;
+
+  //cout << "source: " << source << " actual id: " << actual_id[source] << " last_id: " << last_id[source] << endl;
+  if (last_count[source] != actual_count[source]) {
+    string best_label = getBestInference(source);
+    //cout << "source: " << source << " id: " << actual_id[source] << " label: " << best_label << endl;
+    if (!best_label.empty()) {
+      if (log)
+        cout << "COMMIT\n" <<"source: " << source << " label: " << best_label <<"\nEND COMMIT" << endl;
+
+      thread query (saveToPostgreSQL, credentials, source, best_label);
+      query.detach();
+    }
+    plates[source].clear();
+    last_count[source] = actual_count[source];
+  }
+
+}
+

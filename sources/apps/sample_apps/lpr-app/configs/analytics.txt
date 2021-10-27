@@ -1,0 +1,31 @@
+#######################################################################
+#                       ANALYTICS FILE - LPR QN                       #
+#######################################################################
+
+# config-width       : camera width (secondary stream)
+# config-height      : camera hieght (secondary stream)
+# ods-mode           : 0, 1 or 2
+# line-crossing-i0   : (x,y) values of the lines. Length and direction
+# enable             : 0 = off,  1 = on
+# mode               : strict, balanced or loose
+
+[property]
+enable=1
+config-width=1280
+config-height=720
+osd-mode=2
+display-font-size=20
+
+# CAM46
+[roi-filtering-stream-0]
+enable=1
+roi-iz=1280;160;116;0;0;137;1280;621
+inverse-roi=0
+class-id=-1
+
+[line-crossing-stream-0]
+enable=1
+line-crossing-sz=786;373;672;417;376;263;1280;575
+class-id=-1
+extended=1
+mode=loose
