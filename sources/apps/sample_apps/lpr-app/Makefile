@@ -25,7 +25,7 @@ ifeq ($(CUDA_VER),)
   $(error "CUDA_VER is not set")
 endif
 
-APP:= deepstream-app
+APP:= lpr-app
 
 TARGET_DEVICE = $(shell gcc -dumpmachine | cut -f1 -d -)
 
@@ -38,7 +38,8 @@ ifeq ($(TARGET_DEVICE),aarch64)
   CFLAGS:= -DPLATFORM_TEGRA
 endif
 
-SRCS:= $(wildcard *.c)
+SRCS:= deepstream_test5_app_main.c deepstream_utc.c
+SRCS+= ../deepstream-app/deepstream_app.c ../deepstream-app/deepstream_app_config_parser.c
 SRCS+= $(wildcard ../../apps-common/src/*.c)
 
 INCS:= $(wildcard *.h)
@@ -51,15 +52,16 @@ OBJS:= $(SRCS:.c=.o)
 OBJS+= utils.o
 #-------------------------------------------------------------------#
 
-CFLAGS+= -I./ -I../../apps-common/includes \
-		 -I../../../includes -DDS_VERSION_MINOR=1 -DDS_VERSION_MAJOR=5 \
+
+CFLAGS+= -I../../apps-common/includes \
+		 -I../../../includes \
+		 -I../deepstream-app/ -DDS_VERSION_MINOR=0 -DDS_VERSION_MAJOR=5 \
 		 -I /usr/local/cuda-$(CUDA_VER)/include
 
 LIBS:= -L/usr/local/cuda-$(CUDA_VER)/lib64/ -lcudart
 
-LIBS+= -L$(LIB_INSTALL_DIR) -lnvdsgst_meta -lnvds_meta -lnvdsgst_helper \
-	   -lnvdsgst_smartrecord -lnvds_utils -lnvds_msgbroker -lpqxx -lpq -pthread -lm \
-       -lcuda -lgstrtspserver-1.0 -ldl -Wl,-rpath,$(LIB_INSTALL_DIR)
+LIBS+= -L$(LIB_INSTALL_DIR) -lnvdsgst_meta -lnvds_meta -lnvdsgst_helper -lnvdsgst_smartrecord -lnvds_utils -lnvds_msgbroker -lm \
+       -lcuda -lgstrtspserver-1.0 -ldl -lpqxx -lpq -pthread -Wl,-rpath,$(LIB_INSTALL_DIR)
 
 CFLAGS+= $(shell pkg-config --cflags $(PKGS))
 
@@ -72,7 +74,6 @@ utils.o: utils.cpp $(INCS) Makefile
 	$(CXX) -c -o $@ -Wall $(CFLAGS) $<
 #-------------------------------------------------------------------#
 
-
 %.o: %.c $(INCS) Makefile
 	$(CC) -c -o $@ $(CFLAGS) $<
 
@@ -84,3 +85,4 @@ install: $(APP)
 
 clean:
 	rm -rf $(OBJS) $(APP)
+

@@ -2,9 +2,9 @@
 #define CONFIG_LPR
 #include <vector>
 
-bool log = 1;
+bool log = 0;
 
-const char *credentials = "dbname=postgres user=digevo password=Digevobd* host=database-omia.ccco8vwbpupr.us-west-2.rds.amazonaws.com port=5432";
+const char *credentials = "dbname=* user=* password=* host=* port=*";
 int id_cc = 1;
 std::vector<const char *> acceso_id {"QN_230"};
 std::vector<const char *> nombre_comercial_acceso {"Ingreso 1"};
