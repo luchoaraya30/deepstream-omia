@@ -131,12 +131,12 @@ void updateClassifierMeta (int camera_id, int stream_id, int lc, NvDsObjectMeta 
         if (labelInfo->result_label[0] != '\0' && classifier_meta->unique_component_id == this_sgie_gender) {
           if ( (int) labelInfo->result_class_id == 0) {
             is_male[stream_id] = 0;
-	    count_females[camera_id][lc]++;
+	          count_females[camera_id][lc]++;
             //cout << name_lc_person[cam_id][lc] << " count female: "<< female_count[cam_id][lc] << endl;
           }
           else if ( (int) labelInfo->result_class_id == 1 ) {
             is_male[stream_id] = 1;
-	    count_males[camera_id][lc]++;
+	          count_males[camera_id][lc]++;
             //cout << name_lc_person[cam_id][lc] << " count male: "<< male_count[cam_id][lc] << endl;
           }
         }
@@ -263,6 +263,22 @@ void updateLCCount (int camera_id, NvDsAnalyticsFrameMeta *analytics_frame_meta,
       lc_data->f_gte_65[i] = f_gte_65[camera_id][i];
 
       aux_sgie++;
+
+      count_males[camera_id][i] = 0;
+      m_1_10[camera_id][i] = 0;
+      m_11_18[camera_id][i] = 0;
+      m_19_35[camera_id][i] = 0;
+      m_36_50[camera_id][i] = 0;
+      m_51_64[camera_id][i] = 0;
+      m_gte_65[camera_id][i] = 0;
+
+      count_females[camera_id][i] = 0;
+      f_1_10[camera_id][i] = 0;
+      f_11_18[camera_id][i] = 0;
+      f_19_35[camera_id][i] = 0;
+      f_36_50[camera_id][i] = 0;
+      f_51_64[camera_id][i] = 0;
+      f_gte_65[camera_id][i] = 0;
     }
   }
 
