@@ -153,14 +153,14 @@ void setAgeCounter (int camera_id, int stream_id, int lc_id, int class_id)
   if (is_male[stream_id]) {
     switch (class_id) {
       case 0:
-        m_1_10[camera_id][lc_id]++;    
+        m_11_18[camera_id][lc_id]++;    
         break;
       case 1:
-        m_11_18[camera_id][lc_id]++;
+        m_19_35[camera_id][lc_id]++;
         //cout << name_lc_person[cam_id][lc] << " count age 11_18: " << age_1_count[cam_id][lc]++;;
         break;
       case 2:
-        m_19_35[camera_id][lc_id]++;
+        m_1_10[camera_id][lc_id]++;
         //cout << name_lc_person[cam_id][lc] << " count age 19_35: " << age_2_count[cam_id][lc]++;
         break;
       case 3:
@@ -182,14 +182,14 @@ void setAgeCounter (int camera_id, int stream_id, int lc_id, int class_id)
   else {
     switch (class_id) {
       case 0:
-        f_1_10[camera_id][lc_id]++;
+        f_11_18[camera_id][lc_id]++;
         break;
       case 1:
-        f_11_18[camera_id][lc_id]++;
+        f_19_35[camera_id][lc_id]++;
         //cout << name_lc_person[cam_id][lc] << " count age 11_18: " << age_1_count[cam_id][lc]++;;
         break;
       case 2:
-        f_19_35[camera_id][lc_id]++;
+        f_1_10[camera_id][lc_id]++;
         //cout << name_lc_person[cam_id][lc] << " count age 19_35: " << age_2_count[cam_id][lc]++;
         break;
       case 3:
