@@ -20,6 +20,8 @@ using namespace pqxx;
 
 int last_count[20] = {0};
 int actual_count[20] = {0};
+int frame_count[20] = {0};
+int is_in_roi[20] = {0};
 
 map<string, int> plate;
 map<int, map<string, int>> plates;
@@ -90,14 +92,13 @@ string createInsert (int idx, string plate)
 
 void saveToPostgreSQL (const char * credentials, int source, string plate)
 {
+  string insert = createInsert(source, plate);
   try {
     
     auto t1 = std::chrono::high_resolution_clock::now();
     connection C(credentials);
     std::cout << "Connected to " << C.dbname() << std::endl;
     work W{C};
-
-    string insert = createInsert(source, plate);
     
     //cout << "INSERT \n" << insert << "\nEND INSERT" << endl; 
     W.exec(insert);
@@ -117,22 +118,6 @@ void saveToPostgreSQL (const char * credentials, int source, string plate)
 void checkClassifierMeta (int source, NvDsObjectMeta *obj_meta)
 {
   int yiro = 0;
-  /*actual_id[source] = obj_meta->object_id;
-
-  //cout << "source: " << source << " actual id: " << actual_id[source] << " last_id: " << last_id[source] << endl;
-  if (last_id[source] != actual_id[source]) {
-    string best_label = getBestInference(source);
-    //cout << "source: " << source << " id: " << actual_id[source] << " label: " << best_label << endl;
-    if (!best_label.empty()) {
-      if (log)
-        cout << "COMMIT\n" <<"source: " << source << " label: " << best_label <<"\nEND COMMIT" << endl;
-
-      thread query (saveToPostgreSQL, credentials, source, best_label);
-      query.detach();
-    }
-    plates[source].clear();
-    last_id[source] = actual_id[source];
-  }*/
   
   if (obj_meta->classifier_meta_list != NULL) {
     for (NvDsMetaList * l_class = obj_meta->classifier_meta_list; l_class != NULL; l_class = l_class->next) {
@@ -143,25 +128,23 @@ void checkClassifierMeta (int source, NvDsObjectMeta *obj_meta)
 
       for (GList * l_info = classifier_meta->label_info_list; l_info != NULL; l_info = l_info->next) {
         NvDsLabelInfo *labelInfo = (NvDsLabelInfo *) (l_info->data);
+	size_t size = strlen (labelInfo->result_label);
 
-	      size_t size = strlen (labelInfo->result_label);
-
-	      if (size == 7 || size == 8) {
-
-	        string inference = labelInfo->result_label;
+	if (size == 7 || size == 8) {
+	  string inference = labelInfo->result_label;
 	  
           if ( !checkLabel(source, inference) ) {
-	          plate.insert( pair<string, int> (inference, 1) );
-	          plates.insert( pair<int, map<string, int>> (source, plate));
-	          yiro = plates[source][inference];
-	          //cout << "count inference " << endl; //<< plates[source][inference] << endl;
-	        }
-	        else {
-	          plates[source].at(inference)++;
-	          yiro = plates[source][inference];
-	          //cout << "count inference " << endl; //plates[source][inference] << endl;
-	        }
-	      }
+	    plate.insert( pair<string, int> (inference, 1) );
+	    plates.insert( pair<int, map<string, int>> (source, plate));
+	    yiro = plates[source][inference];
+	    //cout << "count inference " << endl; //<< plates[source][inference] << endl;
+	  }
+	  else {
+	    plates[source].at(inference)++;
+	    yiro = plates[source][inference];
+	    //cout << "count inference " << endl; //plates[source][inference] << endl;
+	  }
+	}
       }
     }
   }
@@ -178,8 +161,9 @@ extern "C" void checkObjMeta (int source, NvDsObjectMeta *obj_meta)
       if ( user_meta_data->roiStatus.size() ) {
         
         for (string name : user_meta_data->roiStatus) {
-          if (name == "iz")
+          if (name == "iz"){
             checkClassifierMeta (source, obj_meta);
+	  }
         }
       }
     }
@@ -188,33 +172,42 @@ extern "C" void checkObjMeta (int source, NvDsObjectMeta *obj_meta)
 
 extern "C" void checkFrameMeta (int source, NvDsFrameMeta *frame_meta)
 {
-  
+
   for (NvDsMetaList * l_user = frame_meta->frame_user_meta_list;l_user != NULL; l_user = l_user->next) {
     NvDsUserMeta *user_meta = (NvDsUserMeta *) l_user->data;
-
     if (user_meta->base_meta.meta_type == NVDS_USER_FRAME_META_NVDSANALYTICS) {
       NvDsAnalyticsFrameMeta *analytics_frame_meta = (NvDsAnalyticsFrameMeta *) user_meta->user_meta_data;
-      
-      actual_count[source] = (int) analytics_frame_meta->objLCCumCnt["sz"];
+      actual_count[source] = (int) analytics_frame_meta->objInROIcnt["iz"];
     }
   }
-	
-  //actual_id[source] = obj_meta->object_id;
+  
+  if (actual_count[source] != 0 && frame_count[source] == 0)
+    is_in_roi[source] = 1;
 
-  //cout << "source: " << source << " actual id: " << actual_id[source] << " last_id: " << last_id[source] << endl;
-  if (last_count[source] != actual_count[source]) {
-    string best_label = getBestInference(source);
-    //cout << "source: " << source << " id: " << actual_id[source] << " label: " << best_label << endl;
-    if (!best_label.empty()) {
-      if (log)
-        cout << "COMMIT\n" <<"source: " << source << " label: " << best_label <<"\nEND COMMIT" << endl;
-
-      thread query (saveToPostgreSQL, credentials, source, best_label);
-      query.detach();
+  if (is_in_roi[source] && frame_count[source] < 100) {
+    for (GList *l = frame_meta->obj_meta_list; l != NULL; l = l->next) {
+      NvDsObjectMeta *obj_meta = (NvDsObjectMeta *) l->data;
+      checkClassifierMeta (source, obj_meta);
     }
-    plates[source].clear();
-    last_count[source] = actual_count[source];
+    frame_count[source]++;
   }
+  
+  if (frame_count[source] > 60) {
+    if (frame_count[source] > 100 || actual_count[source] == 0) {
+      is_in_roi[source] = 0;
+      frame_count[source] = 0;
 
+      string best_label = getBestInference(source);
+      //cout << "source: " << source << " id: " << actual_id[source] << " label: " << best_label << endl;
+      if (!best_label.empty()) {
+        if (log)
+          cout << "COMMIT\n" <<"source: " << source << " label: " << best_label <<"\nEND COMMIT" << endl;
+
+        thread query (saveToPostgreSQL, credentials, source, best_label);
+        query.detach();
+      }
+      plates[source].clear();
+    }
+  }
 }
 

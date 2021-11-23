@@ -596,12 +596,12 @@ bbox_generated_probe_after_analytics (AppCtx * appCtx, GstBuffer * buf,
 
     checkFrameMeta ( (int) stream_id, frame_meta);
 
-    GList *l;
+    /*GList *l;
     for (l = frame_meta->obj_meta_list; l != NULL; l = l->next) {
       obj_meta = (NvDsObjectMeta *) (l->data);
 
       checkObjMeta ( (int) stream_id, obj_meta);
-    }
+    }*/
     testAppCtx->streams[stream_id].frameCount++;
   }
 }
