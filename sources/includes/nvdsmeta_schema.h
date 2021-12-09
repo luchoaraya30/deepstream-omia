@@ -328,7 +328,8 @@ typedef struct NvDsEventMsgMeta {
   gint sgie_names_size;
   gint count_males[10];
   gint count_females[10];
-
+  
+  /*
   gint m_1_10[10];
   gint m_11_18[10];
   gint m_19_35[10];
@@ -342,6 +343,15 @@ typedef struct NvDsEventMsgMeta {
   gint f_36_50[10];
   gint f_51_64[10];
   gint f_gte_65[10];
+  */
+
+  gint m_1_18[10];
+  gint m_19_50[10];
+  gint m_gt_50[10];
+
+  gint f_1_18[10];
+  gint f_19_50[10];
+  gint f_gt_50[10];
   //-----------------------------------------------------------------------------------------//
   //
 } NvDsEventMsgMeta;

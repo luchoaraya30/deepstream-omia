@@ -350,8 +350,8 @@ generate_analytics_module_object (NvDsMsg2pCtx *ctx, NvDsEventMsgMeta *meta, int
    */
   
   string counts, count_males, count_females,
-	 m_1_18, m_19_50, m_gt_50, 
-	 f_1_18, f_19_50, f_gt_50;
+	 m_1_10, m_11_18, m_19_35, m_36_50, m_51_64, m_gte_65, 
+	 f_1_10, f_11_18, f_19_35, f_36_50, f_51_64, f_gte_65;
 
   // analytics object
   analyticsObj = json_object_new ();
@@ -386,26 +386,38 @@ generate_analytics_module_object (NvDsMsg2pCtx *ctx, NvDsEventMsgMeta *meta, int
     count_males = getString(meta->count_males, meta->sgie_names_size, 0);
     json_object_set_string_member (analyticsObj, "males", count_males.data());
 
-    m_1_18 = getString(meta->m_1_18, meta->sgie_names_size, 0);
-    m_19_50 = getString(meta->m_19_50, meta->sgie_names_size, 0);
-    m_gt_50 = getString(meta->m_gt_50, meta->sgie_names_size, 0);
+    m_1_10 = getString(meta->m_1_10, meta->sgie_names_size, 0);
+    m_11_18 = getString(meta->m_11_18, meta->sgie_names_size, 0);
+    m_19_35 = getString(meta->m_19_35, meta->sgie_names_size, 0);
+    m_36_50 = getString(meta->m_36_50, meta->sgie_names_size, 0);
+    m_51_64 = getString(meta->m_51_64, meta->sgie_names_size, 0);
+    m_gte_65 = getString(meta->m_gte_65, meta->sgie_names_size, 0);
 
-    json_object_set_string_member (malesObj, "age_1_18", m_1_18.data());
-    json_object_set_string_member (malesObj, "age_19_50", m_19_50.data());
-    json_object_set_string_member (malesObj, "age_gt_50", m_gt_50.data());
+    json_object_set_string_member (malesObj, "age_1_10", m_1_10.data());
+    json_object_set_string_member (malesObj, "age_11_18", m_11_18.data());
+    json_object_set_string_member (malesObj, "age_19_35", m_19_35.data());
+    json_object_set_string_member (malesObj, "age_36_50", m_36_50.data());
+    json_object_set_string_member (malesObj, "age_51_64", m_51_64.data());
+    json_object_set_string_member (malesObj, "age_GTE_65", m_gte_65.data());
 
     json_object_set_object_member (analyticsObj, "males_details", malesObj);
     
     count_females = getString(meta->count_females, meta->sgie_names_size, 0);
     json_object_set_string_member (analyticsObj, "females", count_females.data());
 
-    f_1_18 = getString(meta->f_1_18, meta->sgie_names_size, 0);
-    f_19_50 = getString(meta->f_19_50, meta->sgie_names_size, 0);
-    f_gt_50 = getString(meta->f_gt_50, meta->sgie_names_size, 0);
+    f_1_10 = getString(meta->f_1_10, meta->sgie_names_size, 0);
+    f_11_18 = getString(meta->f_11_18, meta->sgie_names_size, 0);
+    f_19_35 = getString(meta->f_19_35, meta->sgie_names_size, 0);
+    f_36_50 = getString(meta->f_36_50, meta->sgie_names_size, 0);
+    f_51_64 = getString(meta->f_51_64, meta->sgie_names_size, 0);
+    f_gte_65 = getString(meta->f_gte_65, meta->sgie_names_size, 0);
 
-    json_object_set_string_member (femalesObj, "age_1_18", f_1_18.data());
-    json_object_set_string_member (femalesObj, "age_19_50", f_19_50.data());
-    json_object_set_string_member (femalesObj, "age_gt_50", f_gt_50.data());
+    json_object_set_string_member (femalesObj, "age_1_10", f_1_10.data());
+    json_object_set_string_member (femalesObj, "age_11_18", f_11_18.data());
+    json_object_set_string_member (femalesObj, "age_19_35", f_19_35.data());
+    json_object_set_string_member (femalesObj, "age_36_50", f_36_50.data());
+    json_object_set_string_member (femalesObj, "age_51_64", f_51_64.data());
+    json_object_set_string_member (femalesObj, "age_GTE_65", f_gte_65.data());
 
     json_object_set_object_member (analyticsObj, "females_details", femalesObj);
   }
