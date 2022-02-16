@@ -16,16 +16,30 @@ config-height=720
 osd-mode=2
 display-font-size=20
 
-# CAM46
+#CAM30
 [roi-filtering-stream-0]
-enable=1
-roi-iz=1280;160;116;0;0;137;1280;621
+enable=0
+roi-iz=0;146;1280;146;1280;288;0;288
 inverse-roi=0
 class-id=-1
 
-[line-crossing-stream-0]
-enable=1
-line-crossing-sz=786;373;672;417;376;263;1280;575
+#CAM42
+[roi-filtering-stream-0]
+enable=0
+roi-iz=1280;100;0;90;0;215;1280;213
+inverse-roi=0
 class-id=-1
-extended=1
-mode=loose
+
+#CAM36
+[roi-filtering-stream-0]
+enable=0
+roi-iz=1280;188;0;18;0;110;1280;381
+inverse-roi=0
+class-id=-1
+
+#CAM31
+[roi-filtering-stream-0]
+enable=1
+roi-iz=445;166;0;176;0;106;361;117
+inverse-roi=0
+class-id=-1

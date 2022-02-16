@@ -49,7 +49,7 @@ PKGS:= gstreamer-1.0 gstreamer-video-1.0 x11 json-glib-1.0
 OBJS:= $(SRCS:.c=.o)
 
 #------------------------ CUSTOM CODE ------------------------------#
-OBJS+= utils.o
+OBJS+= parser.o utils.o
 #-------------------------------------------------------------------#
 
 
@@ -61,7 +61,7 @@ CFLAGS+= -I../../apps-common/includes \
 LIBS:= -L/usr/local/cuda-$(CUDA_VER)/lib64/ -lcudart
 
 LIBS+= -L$(LIB_INSTALL_DIR) -lnvdsgst_meta -lnvds_meta -lnvdsgst_helper -lnvdsgst_smartrecord -lnvds_utils -lnvds_msgbroker -lm \
-       -lcuda -lgstrtspserver-1.0 -ldl -lpqxx -lpq -pthread -Wl,-rpath,$(LIB_INSTALL_DIR)
+       -lcuda -lgstrtspserver-1.0 -ldl -lpqxx -lpq -pthread -lconfig++ -Wl,-rpath,$(LIB_INSTALL_DIR)
 
 CFLAGS+= $(shell pkg-config --cflags $(PKGS))
 
@@ -70,6 +70,9 @@ LIBS+= $(shell pkg-config --libs $(PKGS))
 all: $(APP)
 
 #------------------------ CUSTOM CODE ------------------------------#
+parser.o: parser.cpp $(INCS) Makefile
+	$(CXX) -c -o $@ -Wall $(CFLAGS) $<
+
 utils.o: utils.cpp $(INCS) Makefile
 	$(CXX) -c -o $@ -Wall $(CFLAGS) $<
 #-------------------------------------------------------------------#

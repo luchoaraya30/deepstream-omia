@@ -22,4 +22,4 @@ net-scale-factor=0.00392156862745098
 model-color-format=0
 
 [class-attrs-all]
-threshold=0.1
+threshold=0.3

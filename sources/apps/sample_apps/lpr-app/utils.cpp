@@ -11,20 +11,42 @@
 #include <time.h>
 #include <pqxx/pqxx>
 #include <thread>
-#include "config_lpr.h"
+#include "parser.h"
 
 using namespace std;
 using namespace pqxx;
 
 #define SGIE_LPR 4
 
+const char *credentials = "dbname=postgres user=digevo password=Digevobd* host=database-omia.ccco8vwbpupr.us-west-2.rds.amazonaws.com port=5432";
+
 int last_count[20] = {0};
 int actual_count[20] = {0};
 int frame_count[20] = {0};
 int is_in_roi[20] = {0};
 
+int this_periodo = 0;
+int this_id_cc = 0;
+
+bool set_variables = true;
+
+vector<int> this_cameras_id;
+
+vector<string> this_acceso_ids;
+vector<string> this_nombre_comercial_accesos;
 map<string, int> plate;
 map<int, map<string, int>> plates;
+
+void initVariables ()
+{
+  this_periodo = getFramesEnROI();
+  this_id_cc = getIdCC();
+  this_cameras_id = getCamerasID();
+  this_acceso_ids = getAccesoId();
+  this_nombre_comercial_accesos = getNombreComercialAcceso();
+
+  set_variables = false;
+}
 
 bool checkLabel (int idx, string key)
 {
@@ -67,8 +89,10 @@ string getTimestamp(bool hour) {
   ptm = localtime(&rawtime);
   
   result = to_string(ptm->tm_year + 1900) + "-" + to_string(ptm->tm_mon + 1) + "-" + to_string(ptm->tm_mday);
-  if (hour)
+  if (hour) {
+    cout << ptm->tm_min << "\n" << ptm->tm_min << "\n";
     result = to_string(ptm->tm_hour) + ":" + to_string(ptm->tm_min) + ":" + to_string(ptm->tm_sec);
+  }
   
   //string time = to_string(ptm->tm_year + 1900) + "-" + to_string(ptm->tm_mon + 1) + "-" + to_string(ptm->tm_mday) + " " +
   //           to_string(ptm->tm_hour) + ":" + to_string(ptm->tm_min) + ":" + to_string(ptm->tm_sec);
@@ -83,7 +107,7 @@ string createInsert (int idx, string plate)
   string insert = 
 	  "INSERT INTO public.ingreso_vehiculo(id_cc, fecha, hora, acceso_id, nombre_comercial_acceso, placa_patente)";
   string data = 
-	  to_string(id_cc)+",'"+date+"','"+now+"','"+acceso_id[idx]+"','"+nombre_comercial_acceso[idx]+"','"+plate+"'";
+	  to_string(this_id_cc)+",'"+date+"','"+now+"','"+this_acceso_ids[idx]+"','"+this_nombre_comercial_accesos[idx]+"','"+plate+"'";
   
   string result = insert+" VALUES("+data+");";
 
@@ -172,6 +196,8 @@ extern "C" void checkObjMeta (int source, NvDsObjectMeta *obj_meta)
 
 extern "C" void checkFrameMeta (int source, NvDsFrameMeta *frame_meta)
 {
+  if (set_variables)
+    initVariables();
 
   for (NvDsMetaList * l_user = frame_meta->frame_user_meta_list;l_user != NULL; l_user = l_user->next) {
     NvDsUserMeta *user_meta = (NvDsUserMeta *) l_user->data;
@@ -184,7 +210,7 @@ extern "C" void checkFrameMeta (int source, NvDsFrameMeta *frame_meta)
   if (actual_count[source] != 0 && frame_count[source] == 0)
     is_in_roi[source] = 1;
 
-  if (is_in_roi[source] && frame_count[source] < 100) {
+  if (is_in_roi[source] && frame_count[source] < this_periodo) {
     for (GList *l = frame_meta->obj_meta_list; l != NULL; l = l->next) {
       NvDsObjectMeta *obj_meta = (NvDsObjectMeta *) l->data;
       checkClassifierMeta (source, obj_meta);
@@ -193,15 +219,15 @@ extern "C" void checkFrameMeta (int source, NvDsFrameMeta *frame_meta)
   }
   
   if (frame_count[source] > 60) {
-    if (frame_count[source] > 100 || actual_count[source] == 0) {
+    if (frame_count[source] > this_periodo || actual_count[source] == 0) {
       is_in_roi[source] = 0;
       frame_count[source] = 0;
 
       string best_label = getBestInference(source);
       //cout << "source: " << source << " id: " << actual_id[source] << " label: " << best_label << endl;
       if (!best_label.empty()) {
-        if (log)
-          cout << "COMMIT\n" <<"source: " << source << " label: " << best_label <<"\nEND COMMIT" << endl;
+        //if (log)
+        //  cout << "COMMIT\n" <<"source: " << source << " label: " << best_label <<"\nEND COMMIT" << endl;
 
         thread query (saveToPostgreSQL, credentials, source, best_label);
         query.detach();

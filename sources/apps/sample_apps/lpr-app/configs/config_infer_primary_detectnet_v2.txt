@@ -31,6 +31,6 @@ eps=0.2
 pre-cluster-threshold=10.1
 
 [class-attrs-1]
-pre-cluster-threshold=0.3
+pre-cluster-threshold=0.5
 eps=0.2
 group-threshold=1
