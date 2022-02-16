@@ -18,7 +18,7 @@ using namespace pqxx;
 
 #define SGIE_LPR 4
 
-const char *credentials = "dbname=postgres user=digevo password=Digevobd* host=database-omia.ccco8vwbpupr.us-west-2.rds.amazonaws.com port=5432";
+const char *credentials = "dbname=* user=* password=* host=* port=*";
 
 int last_count[20] = {0};
 int actual_count[20] = {0};
